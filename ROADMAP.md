@@ -12,7 +12,7 @@ Each feature is built, then **tested with Playwright**, before the next. Status:
 - ☑ Patient detail + adherence chart — TESTED
 - ☑ Program builder + preset library + config sheet (reps/time/note/verify, autosave) — TESTED
 - ☑ Progress + analytics charts (patient-detail + Analiz tab: comparison + trend) — TESTED
-- ☐ Notifications: general + patient-specific
+- ☑ Notifications: general (channels + quiet hours) + patient-specific (tone, times, escalation) — TESTED
 - ☐ Appointments (basic view exists; editing pending)
 
 ## Patient

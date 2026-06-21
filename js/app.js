@@ -188,7 +188,23 @@
         </section>
         ${tabbar('d_analytics', 'doctor')}`;
     },
-    d_notifs() { return placeholder('d_notifs', 'doctor', 'Bildirimler', 'Genel ve hastaya özel bildirim ayarları yakında.'); },
+    d_notifs() {
+      const st = S.get(); const n = st.settings.notif;
+      const chTog = (k, l) => `<div class="row between" style="margin-bottom:10px"><span>${l}</span><button class="chip ${n[k] ? 'on' : ''}" data-act="ntog" data-k="${k}">${n[k] ? 'Açık' : 'Kapalı'}</button></div>`;
+      return `${appbar('Bildirimler')}
+        <section class="screen">
+          <h3 style="margin-bottom:8px">Genel ayarlar</h3>
+          <div class="card">
+            ${chTog('push', 'Push bildirim')}${chTog('sms', 'SMS')}${chTog('email', 'E-posta')}
+            <div class="divider"></div>
+            <div class="row between"><span class="muted">Sessiz saatler</span><span style="font-weight:600">${n.quietFrom} – ${n.quietTo}</span></div>
+          </div>
+          <h3 style="margin:18px 0 8px">Hastaya özel</h3>
+          <p class="hint" style="margin-bottom:8px">Her hasta için tonu ve hatırlatmayı ayarla.</p>
+          <div class="card flush">${st.patients.map(p => `<button class="list-item" data-act="patient-notif" data-id="${p.id}"><span class="avatar">${esc(p.initials)}</span><span style="flex:1"><span style="font-weight:600">${esc(p.name)}</span><br><span class="hint">${toneLabel(p.notif.tone)} · ${p.notif.times.join(', ')}</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>`).join('')}</div>
+        </section>
+        ${tabbar('d_notifs', 'doctor')}`;
+    },
     d_profile() { return profile('doctor'); },
 
     /* Patient */
@@ -474,6 +490,22 @@
       <button class="btn btn-primary" data-act="send-couldnt" data-eid="${eid}"><i class="ti ti-send"></i> Hekime gönder</button>`;
   }
 
+  const toneLabel = (t) => ({ gentle: 'Nazik', normal: 'Normal', strict: 'Sıkı' }[t] || 'Normal');
+  const TIMES = ['08:00', '10:00', '13:00', '18:00', '20:00'];
+  function notifSheet(p) {
+    const tones = [['gentle', 'Nazik'], ['normal', 'Normal'], ['strict', 'Sıkı']];
+    return `<h3 style="margin-bottom:4px">${esc(p.name)}</h3><p class="hint" style="margin-bottom:14px">Bu hastaya özel bildirim</p>
+      <div class="field"><label>Ton</label><div class="row gap8">${tones.map(([v, l]) => `<button class="chip ${p.notif.tone === v ? 'on' : ''}" data-act="ntone" data-id="${p.id}" data-v="${v}">${l}</button>`).join('')}</div></div>
+      <div class="field"><label>Hatırlatma saatleri</label><div class="row gap8" style="flex-wrap:wrap">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ntime" data-id="${p.id}" data-t="${t}">${t}</button>`).join('')}</div></div>
+      <div class="field"><label>Kaçırırsa beni uyar</label><div class="row gap8">${[1, 2, 3].map(dn => `<button class="chip ${p.notif.escalateDays === dn ? 'on' : ''}" data-act="nesc" data-id="${p.id}" data-d="${dn}">${dn} gün sonra</button>`).join('')}</div></div>
+      <button class="btn btn-primary" data-act="close-sheet"><i class="ti ti-check"></i> Tamam</button>`;
+  }
+  function reminderSheet(p) {
+    return `<h3 style="margin-bottom:4px">Hatırlatma</h3><p class="hint" style="margin-bottom:14px">Egzersiz hatırlatma saatlerin</p>
+      <div class="row gap8" style="flex-wrap:wrap;margin-bottom:16px">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ptime" data-t="${t}">${t}</button>`).join('')}</div>
+      <button class="btn btn-primary" data-act="close-sheet"><i class="ti ti-check"></i> Kaydet</button>`;
+  }
+
   function wireRoleLicense() {
     const lic = $('#docLic');
     $$('[data-role-pick]').forEach(b => b.onclick = () => {
@@ -506,9 +538,17 @@
     if (act === 'toggle-gamify') { st.settings.gamify = !st.settings.gamify; S.save(); return render(); }
     if (act === 'new-patient') return toast('Hasta ekleme akışı yakında');
     if (act === 'build') return go('d_build', { id: d.id });
-    if (act === 'patient-notif') return toast('Hastaya özel bildirim ayarı yakında');
-    if (act === 'reminder') return toast('Hatırlatma ayarı yakında');
     if (act === 'record-own') return toast('Video kaydı yakında — şimdilik hazır animasyon kullanılır');
+
+    /* notifications */
+    if (act === 'ntog') { st.settings.notif[d.k] = !st.settings.notif[d.k]; S.save(); return render(); }
+    if (act === 'patient-notif') { const p = S.patient(d.id) || params.id && S.patient(params.id); return openSheet(notifSheet(p || S.patient(params.id))); }
+    if (act === 'ntone') { const p = S.patient(d.id); p.notif.tone = d.v; S.save(); return openSheet(notifSheet(p)); }
+    if (act === 'ntime') { const p = S.patient(d.id); const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } S.save(); return openSheet(notifSheet(p)); }
+    if (act === 'nesc') { const p = S.patient(d.id); p.notif.escalateDays = +d.d; S.save(); return openSheet(notifSheet(p)); }
+    if (act === 'reminder') return openSheet(reminderSheet(st.patients[0]));
+    if (act === 'ptime') { const p = st.patients[0]; const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } S.save(); return openSheet(reminderSheet(p)); }
+    if (act === 'close-sheet') { closeSheet(); return render(); }
 
     /* builder + library */
     if (act === 'open-library') { sheetCat = 'all'; return openSheet(librarySheet(d.id)); }

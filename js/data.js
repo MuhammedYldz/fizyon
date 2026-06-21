@@ -5,7 +5,7 @@ window.FZ = (function () {
 
   const seed = {
     session: null, // {role:'doctor'|'patient', id}
-    settings: { gamify: true },
+    settings: { gamify: true, notif: { push: true, sms: false, email: false, quietFrom: '22:00', quietTo: '07:00' } },
     doctor: { id: 'd1', name: 'Fzt. Elif Aydın', license: 'TR-FT-20431' },
     patients: [
       { id: 'p1', name: 'Ayşe Kaya', initials: 'AK', condition: 'Sol diz — menisküs', week: 3, adherence: 82,
@@ -56,8 +56,16 @@ window.FZ = (function () {
   let state = load();
 
   function load() {
-    try { const s = JSON.parse(localStorage.getItem(KEY)); return s || structuredClone(seed); }
-    catch { return structuredClone(seed); }
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (!s) return structuredClone(seed);
+      s.settings = s.settings || {};
+      if (!s.settings.notif) s.settings.notif = structuredClone(seed.settings.notif);
+      if (s.settings.gamify === undefined) s.settings.gamify = true;
+      if (!s.presets) s.presets = structuredClone(seed.presets);
+      if (!s.cats) s.cats = structuredClone(seed.cats);
+      return s;
+    } catch { return structuredClone(seed); }
   }
   function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
   function reset() { state = structuredClone(seed); save(); }

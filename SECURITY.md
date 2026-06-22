@@ -21,7 +21,11 @@ not bolted on.
 ## Open items before production (human/account-gated)
 1. **Data residency:** project is currently in `ap-northeast-2` (Seoul). For KVKK/GDPR, recreate in
    `eu-central-1` (or a Turkey region) and migrate. Do this before real patient data.
-2. **Email confirmation** is ON (secure). Keep it on; configure a custom SMTP sender + domain.
+2. **Email confirmation** is ON (secure) — kept on deliberately. The built-in email sender is
+   rate-limited (~a few/hour) and not for production, so configure a **custom SMTP** sender +
+   domain before launch. (For local testing you may temporarily disable confirmation in the
+   Supabase dashboard → Auth, but re-enable it for production.)
+   Patients link to a physiotherapist via the doctor's 6-char share **code** at signup.
 3. **Phone OTP** needs an SMS provider (Twilio / Netgsm) configured in Supabase Auth.
 4. **Re-enable leaked-password protection** and set a strong password policy in Auth settings.
 5. **Rotate** any keys shared during development.

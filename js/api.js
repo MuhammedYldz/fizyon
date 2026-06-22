@@ -16,9 +16,9 @@
   window.FZ_API = {
     client,
     /* ---- auth ---- */
-    async signUp({ email, password, fullName, role, license }) {
+    async signUp({ email, password, fullName, role, license, doctorCode }) {
       const c = await client();
-      return c.auth.signUp({ email, password, options: { data: { full_name: fullName, role, license_no: license || null, consent_health: true, consent_at: new Date().toISOString() } } });
+      return c.auth.signUp({ email, password, options: { data: { full_name: fullName, role, license_no: license || null, doctor_code: doctorCode || null, consent_health: true, consent_at: new Date().toISOString() } } });
     },
     async signIn({ email, password }) { const c = await client(); return c.auth.signInWithPassword({ email, password }); },
     async signOut() { const c = await client(); return c.auth.signOut(); },
@@ -38,6 +38,10 @@
     async setNotif(patientId, patch) { const c = await client(); return c.from('notif_settings').update(patch).eq('patient_id', patientId); },
     async setAppointment(row) { const c = await client(); return c.from('appointments').insert(row); },
     async getGamification(patientId) { const c = await client(); const { data } = await c.from('gamification').select('*').eq('patient_id', patientId).single(); return data; },
+    async setGamification(patientId, patch) { const c = await client(); return c.from('gamification').update(patch).eq('patient_id', patientId); },
+    async completionsFor(patientId) { const c = await client(); const { data } = await c.from('completions').select('exercise_id,verified,done_at').eq('patient_id', patientId); return data || []; },
+    async appointmentsFor(patientId) { const c = await client(); const { data } = await c.from('appointments').select('at').eq('patient_id', patientId).order('at', { ascending: false }).limit(1); return data || []; },
+    async feedbackFor(patientId) { const c = await client(); const { data } = await c.from('feedback').select('reason,note,created_at').eq('patient_id', patientId).order('created_at', { ascending: false }).limit(10); return data || []; },
     async audit(action, target) { const c = await client(); const id = await uid(); if (!id) return; return c.from('audit_log').insert({ actor_id: id, action, target }); }
   };
 })();

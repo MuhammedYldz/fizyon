@@ -14,6 +14,7 @@ create table if not exists public.profiles (
   week          int  default 1,
   consent_health boolean not null default false, -- KVKK explicit consent (açık rıza)
   consent_at    timestamptz,
+  code          text unique,                   -- physiotherapist's share code (patients link with it)
   created_at    timestamptz not null default now()
 );
 
@@ -96,14 +97,23 @@ $$;
 -- ---------- triggers: auto-provision profile + child rows ----------
 create or replace function public.handle_new_user()
   returns trigger language plpgsql security definer set search_path = public as $$
+declare did uuid;
 begin
-  insert into public.profiles (id, role, full_name, license_no, consent_health, consent_at)
+  -- link a patient to a physiotherapist by share code, if provided at signup
+  if (new.raw_user_meta_data->>'doctor_code') is not null and length(new.raw_user_meta_data->>'doctor_code') > 0 then
+    select id into did from public.profiles
+      where code = upper(new.raw_user_meta_data->>'doctor_code') and role = 'doctor' limit 1;
+  end if;
+  insert into public.profiles (id, role, full_name, license_no, doctor_id, consent_health, consent_at, code)
   values (new.id,
           coalesce(new.raw_user_meta_data->>'role','patient'),
           coalesce(new.raw_user_meta_data->>'full_name',''),
           new.raw_user_meta_data->>'license_no',
+          did,
           coalesce((new.raw_user_meta_data->>'consent_health')::boolean, false),
-          (new.raw_user_meta_data->>'consent_at')::timestamptz)
+          (new.raw_user_meta_data->>'consent_at')::timestamptz,
+          case when coalesce(new.raw_user_meta_data->>'role','patient')='doctor'
+               then upper(substr(translate(gen_random_uuid()::text,'-',''),1,6)) else null end)
   on conflict (id) do nothing;
   return new;
 end; $$;

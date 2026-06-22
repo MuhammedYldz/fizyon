@@ -47,8 +47,9 @@
         <p class="muted mt8" style="font-size:18px">Egzersizini yap. Kanıtla. İyileş.</p>
         <p class="hint mt8" style="max-width:300px;margin:8px auto 0">Fizyoterapistinin verdiği ev programını takip et, kamerayla kanıtla, ilerlemeni gör.</p>
         <div class="stack mt24" style="max-width:320px;margin:24px auto 0;width:100%">
-          <button class="btn btn-primary" data-go="reg_type">Hesap oluştur</button>
+          <button class="btn btn-primary" data-go="reg_type">Üye ol</button>
           <button class="btn btn-secondary" data-go="login">Giriş yap</button>
+          <button class="btn-ghost" data-go="demo_pick" style="margin:6px auto 0"><i class="ti ti-eye"></i> Demo olarak gez</button>
         </div>
       </section>`;
     },
@@ -88,6 +89,7 @@
           : `<div class="field"><label for="re">E-posta</label><input class="input" id="re" inputmode="email" autocomplete="email" placeholder="ornek@eposta.com"></div>
              <div class="field"><label for="rpw">Parola</label><input class="input" id="rpw" type="password" autocomplete="new-password" placeholder="En az 8 karakter"></div>`}
         <div id="docLic" class="field" hidden><label for="rl">Fizyoterapist lisans no</label><input class="input" id="rl" placeholder="TR-FT-XXXXX"><p class="hint mt8">Profesyonel hesaplar doğrulanır.</p></div>
+        <div id="patLink" class="field"><label for="rdc">Fizyoterapist kodu (varsa)</label><input class="input" id="rdc" placeholder="örn. A1B2C3" style="text-transform:uppercase"><p class="hint mt8">Fizyoterapistinin verdiği kod. Daha sonra da bağlanabilirsin.</p></div>
         <label class="row gap8" style="align-items:flex-start;cursor:pointer;margin:6px 0 14px">
           <input type="checkbox" id="consentHealth" style="width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:var(--teal-600)">
           <span style="font-size:13px;color:var(--ink-700)">Sağlık verilerimin tedavi takibi amacıyla işlenmesine <b>açık rıza</b> veriyorum ve <a href="privacy.html" target="_blank" style="color:var(--teal-600)">Gizlilik Politikası</a> ile <a href="terms.html" target="_blank" style="color:var(--teal-600)">Kullanım Koşulları</a>'nı okudum.</span>
@@ -100,15 +102,27 @@
     login() {
       return `${appbar('Giriş yap', { back: true })}
       <section class="screen">
-        <p class="muted" style="margin-bottom:18px">Demo: rolünü seçip devam et.</p>
+        <p class="muted" style="margin-bottom:18px">Hesabınla giriş yap.</p>
+        <div class="field"><label for="liEmail">E-posta</label><input class="input" id="liEmail" inputmode="email" autocomplete="email" placeholder="ornek@eposta.com"></div>
+        <div class="field"><label for="liPw">Parola</label><input class="input" id="liPw" type="password" autocomplete="current-password" placeholder="Parolan"></div>
+        <div class="err-msg" id="liErr" hidden></div>
+        <button class="btn btn-primary mt8" data-act="dologin">Giriş yap</button>
+        <p class="hint center mt16">Hesabın yok mu? <a href="#" data-go="reg_type" style="color:var(--teal-600)">Üye ol</a></p>
+      </section>`;
+    },
+
+    demo_pick() {
+      return `${appbar('Demo', { back: true })}
+      <section class="screen">
+        <div class="card" style="background:var(--warn-bg);border-color:transparent;margin-bottom:16px"><p style="color:var(--warn);font-size:14px;margin:0"><i class="ti ti-flask"></i> Demo modu — örnek verilerle gezinirsin, gerçek hesap oluşmaz.</p></div>
         <div class="stack">
-          <button class="option" data-login="doctor">
+          <button class="option" data-act="demo-doctor">
             <span class="oi"><i class="ti ti-stethoscope"></i></span>
-            <span><span class="ot">Fizyoterapist olarak gir</span><br><span class="od">Hastalarını yönet, program ver, ilerlemeyi gör.</span></span>
+            <span><span class="ot">Fizyoterapist olarak gez</span><br><span class="od">Hastalar, program, analiz ve bildirimler.</span></span>
           </button>
-          <button class="option" data-login="patient">
+          <button class="option" data-act="demo-patient">
             <span class="oi"><i class="ti ti-walk"></i></span>
-            <span><span class="ot">Hasta olarak gir</span><br><span class="od">Bugünün programını yap ve kanıtla.</span></span>
+            <span><span class="ot">Hasta olarak gez</span><br><span class="od">Bugünün programı, kamera kanıtı, yolculuk.</span></span>
           </button>
         </div>
       </section>`;
@@ -365,15 +379,19 @@
   }
   function profile(role) {
     const st = S.get();
+    const name = role === 'doctor' ? st.doctor.name : (st.patients[0] ? st.patients[0].name : 'Hasta');
+    const inits = role === 'doctor' ? (st.doctor.name || 'Fzt').replace('Fzt.', '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) : (st.patients[0] ? st.patients[0].initials : '?');
+    const sub = role === 'doctor' ? ('Fizyoterapist' + (st.doctor.license ? ' · ' + esc(st.doctor.license) : '')) : 'Hasta';
     return `${appbar('Profil')}<section class="screen">
-      <div class="row" style="margin-bottom:18px"><span class="avatar lg">${role === 'doctor' ? 'EA' : 'AK'}</span><div><div style="font-weight:600;font-size:18px">${role === 'doctor' ? esc(st.doctor.name) : 'Ayşe Kaya'}</div><div class="hint">${role === 'doctor' ? 'Fizyoterapist · ' + esc(st.doctor.license) : 'Hasta'}</div></div></div>
+      <div class="row" style="margin-bottom:18px"><span class="avatar lg">${esc(inits)}</span><div><div style="font-weight:600;font-size:18px">${esc(name)}</div><div class="hint">${sub}${st.cloud ? '' : ' · demo'}</div></div></div>
+      ${role === 'doctor' && st.cloud ? `<div class="card row between"><div><div class="caption">Fizyoterapist kodun</div><div style="font-weight:700;letter-spacing:3px;font-size:18px;color:var(--teal-700)">${esc(st.code || '—')}</div></div><button class="btn sm btn-secondary" data-act="new-patient"><i class="ti ti-user-plus"></i> Davet</button></div>` : ''}
       ${role === 'patient' ? `<div class="card row between"><div><div style="font-weight:600">Oyunlaştırma</div><div class="hint">Puan, seri ve ödülleri göster</div></div><button class="chip ${st.settings.gamify ? 'on' : ''}" data-act="toggle-gamify">${st.settings.gamify ? 'Açık' : 'Kapalı'}</button></div>` : ''}
       <div class="card flush mt16">
-        <div class="list-item"><i class="ti ti-lock" style="color:var(--ink-500)"></i><span style="flex:1">Gizlilik ve güvenlik</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></div>
-        <div class="list-item"><i class="ti ti-bell" style="color:var(--ink-500)"></i><span style="flex:1">Bildirimler</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></div>
+        <a class="list-item" href="privacy.html" target="_blank" style="text-decoration:none"><i class="ti ti-lock" style="color:var(--ink-500)"></i><span style="flex:1">Gizlilik ve güvenlik</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
+        <a class="list-item" href="terms.html" target="_blank" style="text-decoration:none"><i class="ti ti-file-text" style="color:var(--ink-500)"></i><span style="flex:1">Kullanım koşulları</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
       </div>
       <button class="btn btn-secondary mt16" data-act="logout"><i class="ti ti-logout"></i> Çıkış yap</button>
-      <button class="btn-ghost mt16" data-act="reset" style="display:block;margin:16px auto 0">Demoyu sıfırla</button>
+      ${st.cloud ? '' : '<button class="btn-ghost mt16" data-act="reset" style="display:block;margin:16px auto 0">Demoyu sıfırla</button>'}
     </section>${tabbar(role === 'doctor' ? 'd_profile' : 'p_profile', role)}`;
   }
 
@@ -508,7 +526,11 @@
     stopCamera();
     const st = S.get(); const p = st.patients[0];
     const ex = p.program.find(x => x.id === e.id); if (ex) { ex.done = true; ex.verifiedAt = Date.now(); }
-    if (st.settings.gamify) { p.points += 30; p.streak = Math.max(p.streak, p.streak); }
+    if (st.settings.gamify) { p.points += 30; }
+    if (S.isCloud()) {
+      window.FZ_API.logCompletion({ exercise_id: e.id, patient_id: p.id, verified: true }).catch(() => {});
+      if (st.settings.gamify) window.FZ_API.setGamification(p.id, { points: p.points }).catch(() => {});
+    }
     S.save();
     const stage = $('#camStage');
     if (stage) stage.insertAdjacentHTML('beforeend', `<div class="verify-ok"><i class="ti ti-circle-check"></i><div style="font-size:18px;font-weight:600">Doğrulandı!</div>${st.settings.gamify ? '<div class="badge" style="background:rgba(255,255,255,.2);color:#fff">+30 puan</div>' : ''}</div>`);
@@ -606,6 +628,11 @@
     }, 'image/png');
   }
 
+  function inviteSheet(code) {
+    return `<h3 style="margin-bottom:4px">Hasta davet et</h3><p class="hint" style="margin-bottom:14px">Hastan üye olurken bu kodu girsin — hesabı otomatik sana bağlanır.</p>
+      <div class="card center" style="background:var(--teal-50);border-color:var(--teal-100)"><div class="caption" style="color:var(--teal-600)">Fizyoterapist kodun</div><div style="font-size:34px;font-weight:700;letter-spacing:5px;color:var(--teal-700);margin-top:4px">${esc(code || '—')}</div></div>
+      <button class="btn btn-primary mt8" data-act="close-sheet"><i class="ti ti-check"></i> Tamam</button>`;
+  }
   function recordSheet(pid) {
     return `<h3 style="margin-bottom:4px">Kendi videonu kaydet</h3><p class="hint" style="margin-bottom:12px">Hastanın yaptığı hareketi kaydet</p>
       <div class="cam-stage" style="aspect-ratio:4/3;margin-bottom:12px"><video id="rvCam" autoplay playsinline muted></video><div class="cam-hint" id="rvHint">Hazır olunca kaydı başlat</div></div>
@@ -633,11 +660,12 @@
   }
 
   function wireRoleLicense() {
-    const lic = $('#docLic');
+    const lic = $('#docLic'), link = $('#patLink');
     $$('[data-role-pick]').forEach(b => b.onclick = () => {
       $$('[data-role-pick]').forEach(x => x.classList.remove('on'));
       b.classList.add('on');
-      lic.hidden = b.dataset.rolePick !== 'doctor';
+      const isDoc = b.dataset.rolePick === 'doctor';
+      lic.hidden = !isDoc; if (link) link.hidden = isDoc;
     });
   }
 
@@ -659,10 +687,13 @@
     const act = d.act;
     if (act === 'back') return back();
     if (act === 'register') return doRegister();
-    if (act === 'logout') { st.session = null; S.save(); stack = ['welcome']; return render(); }
-    if (act === 'reset') { S.reset(); stack = ['welcome']; toast('Demo sıfırlandı'); return render(); }
-    if (act === 'toggle-gamify') { st.settings.gamify = !st.settings.gamify; S.save(); return render(); }
-    if (act === 'new-patient') return go('d_newpatient');
+    if (act === 'demo-doctor') { S.startDemo('doctor'); return home(); }
+    if (act === 'demo-patient') { S.startDemo('patient'); return home(); }
+    if (act === 'dologin') return doLogin(t);
+    if (act === 'logout') { try { if (S.isCloud()) window.FZ_API.signOut(); } catch (e) {} S.logout(); stack = ['welcome']; return render(); }
+    if (act === 'reset') { S.reset(); stack = ['welcome']; toast('Sıfırlandı'); return render(); }
+    if (act === 'toggle-gamify') { st.settings.gamify = !st.settings.gamify; if (S.isCloud()) window.FZ_API.setGamification(st.patients[0].id, { gamify_enabled: st.settings.gamify }).catch(() => {}); S.save(); return render(); }
+    if (act === 'new-patient') { if (S.isCloud()) return openSheet(inviteSheet(st.code)); return go('d_newpatient'); }
     if (act === 'create-patient') {
       const name = ($('#npName', document).value || '').trim();
       const err = $('#npErr', document);
@@ -676,7 +707,7 @@
     if (act === 'save-appt') {
       const dv = $('#apDate', document).value, tv = $('#apTime', document).value || '14:00';
       const p = S.patient(d.id);
-      if (dv) { const dt = new Date(dv + 'T00:00'); p.nextAppt = `${dt.getDate()} ${MONTHS[dt.getMonth()]}, ${tv}`; }
+      if (dv) { const dt = new Date(dv + 'T00:00'); p.nextAppt = `${dt.getDate()} ${MONTHS[dt.getMonth()]}, ${tv}`; if (S.isCloud()) window.FZ_API.setAppointment({ patient_id: p.id, at: new Date(dv + 'T' + tv).toISOString(), created_by: st.doctor.id }).catch(() => {}); }
       S.save(); closeSheet(); render(); return toast('Randevu güncellendi');
     }
     if (act === 'build') return go('d_build', { id: d.id });
@@ -689,8 +720,13 @@
         if (n > 0) { hint.textContent = 'Kayıt: ' + n; return; }
         clearInterval(iv);
         const p = S.patient(d.id);
-        p.program.push({ id: 'e' + Date.now(), name: ($('#rvName', document).value || 'Özel hareket').trim(), demo: 'generic', video: true, reps: +$('#rvReps', document).value || 10, sets: +$('#rvSets', document).value || 3, hold: +$('#rvHold', document).value || 0, note: '', verify: null, done: false });
-        S.save(); stopCamera(); closeSheet(); render(); toast('Video kaydedildi ✓');
+        const ex = { name: ($('#rvName', document).value || 'Özel hareket').trim(), demo: 'generic', reps: +$('#rvReps', document).value || 10, sets: +$('#rvSets', document).value || 3, hold: +$('#rvHold', document).value || 0 };
+        stopCamera();
+        if (S.isCloud()) {
+          closeSheet();
+          window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, note: '', verify_text: null, created_by: st.doctor.id })
+            .then(async () => { await refreshProgram(p.id); render(); toast('Hareket kaydedildi ✓'); }).catch(() => toast('Kaydedilemedi'));
+        } else { p.program.push({ id: 'e' + Date.now(), ...ex, video: true, note: '', verify: null, done: false }); S.save(); closeSheet(); render(); toast('Video kaydedildi ✓'); }
       }, 800);
       return;
     }
@@ -698,17 +734,17 @@
     /* notifications */
     if (act === 'ntog') { st.settings.notif[d.k] = !st.settings.notif[d.k]; S.save(); return render(); }
     if (act === 'patient-notif') { const p = S.patient(d.id) || params.id && S.patient(params.id); return openSheet(notifSheet(p || S.patient(params.id))); }
-    if (act === 'ntone') { const p = S.patient(d.id); p.notif.tone = d.v; S.save(); return openSheet(notifSheet(p)); }
-    if (act === 'ntime') { const p = S.patient(d.id); const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } S.save(); return openSheet(notifSheet(p)); }
-    if (act === 'nesc') { const p = S.patient(d.id); p.notif.escalateDays = +d.d; S.save(); return openSheet(notifSheet(p)); }
-    if (act === 'nact') { const p = S.patient(d.id); const i = p.notif.autoActions.indexOf(d.a); if (i >= 0) p.notif.autoActions.splice(i, 1); else p.notif.autoActions.push(d.a); S.save(); return openSheet(notifSheet(p)); }
+    if (act === 'ntone') { const p = S.patient(d.id); p.notif.tone = d.v; saveNotif(p); return openSheet(notifSheet(p)); }
+    if (act === 'ntime') { const p = S.patient(d.id); const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } saveNotif(p); return openSheet(notifSheet(p)); }
+    if (act === 'nesc') { const p = S.patient(d.id); p.notif.escalateDays = +d.d; saveNotif(p); return openSheet(notifSheet(p)); }
+    if (act === 'nact') { const p = S.patient(d.id); const i = p.notif.autoActions.indexOf(d.a); if (i >= 0) p.notif.autoActions.splice(i, 1); else p.notif.autoActions.push(d.a); saveNotif(p); return openSheet(notifSheet(p)); }
     if (act === 'gesc') { st.settings.notif.inactiveDays = +d.d; S.save(); return render(); }
     if (act === 'gnact') { const arr = st.settings.notif.autoActions; const i = arr.indexOf(d.a); if (i >= 0) arr.splice(i, 1); else arr.push(d.a); S.save(); return render(); }
     if (act === 'msg-doctor') return toast('Mesajlaşma yakında — şimdilik fizyoterapistin bildirim alır');
     if (act === 'share-card') return shareCard(false);
     if (act === 'download-card') return shareCard(true);
     if (act === 'reminder') return openSheet(reminderSheet(st.patients[0]));
-    if (act === 'ptime') { const p = st.patients[0]; const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } S.save(); return openSheet(reminderSheet(p)); }
+    if (act === 'ptime') { const p = st.patients[0]; const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } saveNotif(p); return openSheet(reminderSheet(p)); }
     if (act === 'close-sheet') { closeSheet(); return render(); }
 
     /* builder + library */
@@ -718,14 +754,28 @@
     if (act === 'toggle-cfg-verify') { cfgVerify = !cfgVerify; t.textContent = cfgVerify ? 'Açık' : 'Kapalı'; t.classList.toggle('on', cfgVerify); return; }
     if (act === 'add-preset') {
       const pr = st.presets.find(x => x.id === d.pid); const p = S.patient(d.id);
-      p.program.push({ id: 'e' + Date.now(), name: pr.name, demo: pr.demo, reps: +$('#cfgReps', document).value || pr.reps, sets: +$('#cfgSets', document).value || pr.sets, hold: +$('#cfgHold', document).value || 0, note: $('#cfgNote', document).value.trim(), verify: cfgVerify ? 'Hareketi yap ve kameraya göster' : null, done: false });
-      S.save(); closeSheet(); render(); return toast(pr.name + ' eklendi');
+      const ex = { name: pr.name, demo: pr.demo, reps: +$('#cfgReps', document).value || pr.reps, sets: +$('#cfgSets', document).value || pr.sets, hold: +$('#cfgHold', document).value || 0, note: $('#cfgNote', document).value.trim(), verify: cfgVerify ? 'Hareketi yap ve kameraya göster' : null };
+      if (S.isCloud()) {
+        closeSheet();
+        window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, note: ex.note, verify_text: ex.verify, created_by: st.doctor.id })
+          .then(async () => { await refreshProgram(p.id); render(); toast(pr.name + ' eklendi'); }).catch(() => toast('Eklenemedi'));
+      } else { p.program.push({ id: 'e' + Date.now(), ...ex, done: false }); S.save(); closeSheet(); render(); toast(pr.name + ' eklendi'); }
+      return;
     }
-    if (act === 'del-ex') { const p = S.patient(params.id); p.program = p.program.filter(x => x.id !== d.eid); S.save(); render(); return toast('Hareket silindi'); }
+    if (act === 'del-ex') {
+      const p = S.patient(params.id);
+      if (S.isCloud()) { window.FZ_API.deleteExercise(d.eid).then(async () => { await refreshProgram(p.id); render(); toast('Hareket silindi'); }).catch(() => toast('Silinemedi')); }
+      else { p.program = p.program.filter(x => x.id !== d.eid); S.save(); render(); toast('Hareket silindi'); }
+      return;
+    }
 
     /* player + verify */
     if (act === 'goverify') return go('p_verify', { eid: d.eid });
-    if (act === 'complete-ex') { const p = st.patients[0]; const ex = p.program.find(x => x.id === d.eid); if (ex) ex.done = true; if (st.settings.gamify) p.points += 20; S.save(); home(); return toast('Tamamlandı'); }
+    if (act === 'complete-ex') {
+      const p = st.patients[0]; const ex = p.program.find(x => x.id === d.eid); if (ex) ex.done = true; if (st.settings.gamify) p.points += 20;
+      if (S.isCloud()) window.FZ_API.logCompletion({ exercise_id: d.eid, patient_id: p.id, verified: false }).catch(() => {});
+      S.save(); home(); return toast('Tamamlandı');
+    }
     if (act === 'sim-verify') { const p = st.patients[0]; return verifySuccess(p.program.find(x => x.id === d.eid) || p.program[0]); }
 
     /* couldn't-do */
@@ -734,9 +784,29 @@
     if (act === 'send-couldnt') {
       const p = st.patients[0]; const txt = ($('#couldntText', document) || {}).value || '';
       p.couldnt.unshift({ day: 'Bugün', reason: reasonPick || 'Belirtilmedi', text: txt.trim() });
+      if (S.isCloud()) window.FZ_API.sendFeedback({ patient_id: p.id, exercise_id: d.eid || null, reason: reasonPick || 'Belirtilmedi', note: txt.trim() }).catch(() => {});
       S.save(); closeSheet(); back(); return toast('Hekimine iletildi');
     }
   });
+  function saveNotif(p) { S.save(); if (S.isCloud()) window.FZ_API.setNotif(p.id, { tone: p.notif.tone, times: p.notif.times, inactive_days: p.notif.escalateDays, auto_actions: p.notif.autoActions }).catch(() => {}); }
+
+  async function doLogin(btn) {
+    const err = $('#liErr'); const email = ($('#liEmail').value || '').trim(); const pw = $('#liPw').value || '';
+    if (!email || !pw) { err.hidden = false; err.innerHTML = '<i class="ti ti-alert-circle"></i> E-posta ve parola gerekli.'; return; }
+    err.hidden = true; btn.disabled = true; btn.textContent = 'Giriş yapılıyor…';
+    try {
+      const { error } = await window.FZ_API.signIn({ email, password: pw });
+      if (error) throw error;
+      const cs = await window.__fzBuildCloudState();
+      if (!cs) throw new Error('profil');
+      S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render();
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Giriş yap';
+      const m = ((e && e.message) || '').toLowerCase();
+      err.hidden = false;
+      err.innerHTML = '<i class="ti ti-alert-circle"></i> ' + (m.includes('confirm') ? 'Önce e-postanı doğrula.' : (m.includes('invalid') || m.includes('credential')) ? 'E-posta veya parola hatalı.' : 'Giriş başarısız.');
+    }
+  }
 
   async function doRegister() {
     const phone = params.type === 'phone';
@@ -757,7 +827,7 @@
 
     const btn = $('[data-act="register"]'); if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Hesap oluşturuluyor…'; }
     try {
-      const { data, error } = await window.FZ_API.signUp({ email: $('#re').value.trim(), password: $('#rpw').value, fullName: name, role, license: role === 'doctor' ? $('#rl').value.trim() : null });
+      const { data, error } = await window.FZ_API.signUp({ email: $('#re').value.trim(), password: $('#rpw').value, fullName: name, role, license: role === 'doctor' ? $('#rl').value.trim() : null, doctorCode: role === 'patient' ? ($('#rdc').value || '').trim() : null });
       if (error) throw error;
       if (data.session) {
         await window.FZ_API.setConsent();
@@ -775,8 +845,67 @@
     }
   }
 
+  /* ---------- cloud state assembly ---------- */
+  const initialsOf = (name) => ((name || '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toLocaleUpperCase('tr')) || '?';
+  const mapEx = (e) => ({ id: e.id, name: e.name, demo: e.demo || 'generic', video: !!e.video_url, reps: e.reps, sets: e.sets, hold: e.hold, note: e.note || '', verify: e.verify_text, done: false });
+
+  async function buildPatient(p) {
+    const api = window.FZ_API;
+    const [program, notif, gam, comps, appts] = await Promise.all([
+      api.program(p.id), api.getNotif(p.id), api.getGamification(p.id), api.completionsFor(p.id), api.appointmentsFor(p.id)
+    ]);
+    const doneSet = new Set((comps || []).map(c => c.exercise_id));
+    let nextAppt = 'Planlanmadı';
+    if (appts && appts[0]) { const d = new Date(appts[0].at); nextAppt = `${d.getDate()} ${MONTHS[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+    return {
+      id: p.id, name: p.full_name || 'İsimsiz', initials: initialsOf(p.full_name), condition: p.condition || '—', week: p.week || 1,
+      adherence: 0, streak: gam ? gam.streak : 0, points: gam ? gam.points : 0, journeyStage: gam ? gam.journey_stage : 1,
+      history: [0, 0, 0, 0, 0, 0, 0], note: '', nextAppt,
+      notif: notif ? { tone: notif.tone || 'normal', times: notif.times || ['18:00'], escalateDays: notif.inactive_days || 2, autoActions: notif.auto_actions || ['notifyDoctor'] } : { tone: 'normal', times: ['18:00'], escalateDays: 2, autoActions: ['notifyDoctor'] },
+      couldnt: [],
+      program: (program || []).map(e => ({ ...mapEx(e), done: doneSet.has(e.id) }))
+    };
+  }
+
+  async function buildCloudState() {
+    const api = window.FZ_API, seed = S.seedRef;
+    const profile = await api.myProfile();
+    if (!profile) return null;
+    const base = {
+      session: { role: profile.role, id: profile.id, cloud: true }, cloud: true, code: profile.code || null,
+      settings: { gamify: true, notif: structuredClone(seed.settings.notif) },
+      presets: structuredClone(seed.presets), cats: structuredClone(seed.cats), badges: structuredClone(seed.badges),
+      doctor: { id: '', name: '', license: '' }, patients: []
+    };
+    if (profile.role === 'doctor') {
+      base.doctor = { id: profile.id, name: profile.full_name || 'Fizyoterapist', license: profile.license_no || '' };
+      const pts = await api.myPatients();
+      base.patients = await Promise.all((pts || []).map(buildPatient));
+    } else {
+      const doc = await api.myDoctor();
+      base.doctor = doc ? { id: profile.doctor_id, name: doc.full_name || 'Fizyoterapist', license: doc.license_no || '' } : { id: '', name: 'Fizyoterapist atanmadı', license: '' };
+      const self = await buildPatient(profile);
+      self.couldnt = (await api.feedbackFor(profile.id)).map(f => ({ day: '', reason: f.reason || '', text: f.note || '' }));
+      base.patients = [self];
+      const g = await api.getGamification(profile.id); if (g) base.settings.gamify = g.gamify_enabled;
+    }
+    return base;
+  }
+  async function refreshProgram(pid) {
+    const prog = await window.FZ_API.program(pid);
+    const comps = await window.FZ_API.completionsFor(pid);
+    const doneSet = new Set((comps || []).map(c => c.exercise_id));
+    const p = S.patient(pid); if (p) p.program = (prog || []).map(e => ({ ...mapEx(e), done: doneSet.has(e.id) }));
+  }
+  window.__fzBuildCloudState = buildCloudState; // used by handlers
+
   /* boot */
-  const st = S.get();
-  if (st.session) stack = [st.session.role === 'doctor' ? 'd_patients' : 'p_today'];
-  render();
+  stack = ['welcome']; render();
+  (async function boot() {
+    try {
+      const sess = await window.FZ_API.session();
+      if (sess) { const cs = await buildCloudState(); if (cs) { S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); return; } }
+    } catch (e) { /* offline / not signed in */ }
+    if (S.resumeDemo()) { const st = S.get(); stack = [st.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); }
+  })();
 })();

@@ -35,10 +35,14 @@ Each feature is built, then **tested with Playwright**, before the next. Status:
 - ☑ Real auth: email signup/login wired + tested against live DB (profile row created)
 - ☑ KVKK consent gate (açık rıza) in onboarding; consent persisted server-side — TESTED
 - ☑ Privacy Policy + Terms (KVKK/GDPR-aligned, lawyer-review flagged) hosted in-app
-- ☑ Cloud data API layer (js/api.js) ready for per-screen migration
+- ☑ Cloud data API layer (js/api.js)
 - ☑ Google Play readiness: GOOGLE_PLAY.md, TWA scaffold (twa-manifest, assetlinks), SECURITY.md
-- ☐ Migrate each screen's reads/writes from local demo state to js/api.js (cloud)
-- ☐ Phone OTP (needs SMS provider), custom domain for TWA, EU data residency, lawyer/VERBİS
+- ☑ Demo is now its own button (welcome → "Demo olarak gez"); demo + cloud modes coexist
+- ☑ Real login (email/password) → loads own cloud data — TESTED (doctor sees own patient + program via RLS)
+- ☑ Register fully functional (email signup + consent + doctor-code linking) — TESTED (profile/link created)
+- ☑ Core writes persist to cloud: add/delete exercise, completion, verify, feedback, notif, appointment, gamify, video
+- ☐ Phone OTP (needs SMS provider), custom SMTP (built-in email rate-limited), custom domain for TWA, EU data residency, lawyer/VERBİS
+- Note: condition/week not captured at patient self-signup (doctor sets clinical context); minor follow-up
 
 ## Cross-cutting
 - ☐ 3-tap navigation audit

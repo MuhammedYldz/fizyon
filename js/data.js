@@ -53,7 +53,7 @@ window.FZ = (function () {
     ]
   };
 
-  let state = load();
+  let state = null; // set by startDemo()/resumeDemo()/loadCloud() during boot
 
   function load() {
     try {
@@ -69,12 +69,23 @@ window.FZ = (function () {
       return s;
     } catch { return structuredClone(seed); }
   }
-  function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
-  function reset() { state = structuredClone(seed); save(); }
+  // Demo mode persists locally; cloud mode keeps health data in memory only (privacy).
+  let mode = null; // 'demo' | 'cloud'
+  function save() { if (mode === 'demo') localStorage.setItem(KEY, JSON.stringify(state)); }
+  function reset() { localStorage.removeItem(KEY); state = null; mode = null; }
 
   return {
-    get: () => state, save, reset,
-    patient: (id) => state.patients.find(p => p.id === id),
-    seedRef: seed
+    get: () => state,
+    save, reset,
+    mode: () => mode,
+    isCloud: () => mode === 'cloud',
+    patient: (id) => state && state.patients.find(p => p.id === id),
+    seedRef: seed,
+    // start/resume the local demo experience
+    startDemo(role) { mode = 'demo'; state = load(); state.cloud = false; state.session = { role, id: role === 'doctor' ? 'd1' : 'p1' }; save(); },
+    resumeDemo() { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.session) { mode = 'demo'; state = load(); return true; } } catch {} return false; },
+    // load a cloud-built state (real account)
+    loadCloud(obj) { mode = 'cloud'; state = obj; },
+    logout() { localStorage.removeItem(KEY); state = null; mode = null; }
   };
 })();

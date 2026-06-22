@@ -384,7 +384,7 @@
     const sub = role === 'doctor' ? ('Fizyoterapist' + (st.doctor.license ? ' · ' + esc(st.doctor.license) : '')) : 'Hasta';
     return `${appbar('Profil')}<section class="screen">
       <div class="row" style="margin-bottom:18px"><span class="avatar lg">${esc(inits)}</span><div><div style="font-weight:600;font-size:18px">${esc(name)}</div><div class="hint">${sub}${st.cloud ? '' : ' · demo'}</div></div></div>
-      ${role === 'doctor' && st.cloud ? `<div class="card row between"><div><div class="caption">Fizyoterapist kodun</div><div style="font-weight:700;letter-spacing:3px;font-size:18px;color:var(--teal-700)">${esc(st.code || '—')}</div></div><button class="btn sm btn-secondary" data-act="new-patient"><i class="ti ti-user-plus"></i> Davet</button></div>` : ''}
+      ${role === 'doctor' && st.cloud ? `<div class="card"><div class="caption">Fizyoterapist kodun</div><div class="row between" style="margin-top:6px"><div style="font-weight:700;letter-spacing:3px;font-size:22px;color:var(--teal-700)">${esc(st.code || '—')}</div><div class="row gap8"><button class="btn sm btn-secondary" data-act="copy-code" data-code="${esc(st.code || '')}"><i class="ti ti-copy"></i> Kopyala</button><button class="btn sm btn-secondary" data-act="new-patient"><i class="ti ti-user-plus"></i> Davet</button></div></div></div>` : ''}
       ${role === 'patient' ? `<div class="card row between"><div><div style="font-weight:600">Oyunlaştırma</div><div class="hint">Puan, seri ve ödülleri göster</div></div><button class="chip ${st.settings.gamify ? 'on' : ''}" data-act="toggle-gamify">${st.settings.gamify ? 'Açık' : 'Kapalı'}</button></div>` : ''}
       <div class="card flush mt16">
         <a class="list-item" href="privacy.html" target="_blank" style="text-decoration:none"><i class="ti ti-lock" style="color:var(--ink-500)"></i><span style="flex:1">Gizlilik ve güvenlik</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
@@ -630,7 +630,8 @@
 
   function inviteSheet(code) {
     return `<h3 style="margin-bottom:4px">Hasta davet et</h3><p class="hint" style="margin-bottom:14px">Hastan üye olurken bu kodu girsin — hesabı otomatik sana bağlanır.</p>
-      <div class="card center" style="background:var(--teal-50);border-color:var(--teal-100)"><div class="caption" style="color:var(--teal-600)">Fizyoterapist kodun</div><div style="font-size:34px;font-weight:700;letter-spacing:5px;color:var(--teal-700);margin-top:4px">${esc(code || '—')}</div></div>
+      <div class="card center" style="background:var(--teal-50);border-color:var(--teal-100)"><div class="caption" style="color:var(--teal-600)">Fizyoterapist kodun</div><div style="font-size:34px;font-weight:700;letter-spacing:5px;color:var(--teal-700);margin-top:4px" id="inviteCode">${esc(code || '—')}</div></div>
+      <button class="btn btn-secondary mt8" data-act="copy-code" data-code="${esc(code || '')}"><i class="ti ti-copy"></i> Kodu kopyala</button>
       <button class="btn btn-primary mt8" data-act="close-sheet"><i class="ti ti-check"></i> Tamam</button>`;
   }
   function recordSheet(pid) {
@@ -740,6 +741,13 @@
     if (act === 'nact') { const p = S.patient(d.id); const i = p.notif.autoActions.indexOf(d.a); if (i >= 0) p.notif.autoActions.splice(i, 1); else p.notif.autoActions.push(d.a); saveNotif(p); return openSheet(notifSheet(p)); }
     if (act === 'gesc') { st.settings.notif.inactiveDays = +d.d; S.save(); return render(); }
     if (act === 'gnact') { const arr = st.settings.notif.autoActions; const i = arr.indexOf(d.a); if (i >= 0) arr.splice(i, 1); else arr.push(d.a); S.save(); return render(); }
+    if (act === 'copy-code') {
+      const code = d.code || '';
+      if (!code) return toast('Kod yok');
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(() => toast('Kod kopyalandı: ' + code)).catch(() => toast('Kod: ' + code));
+      else { try { const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Kod kopyalandı: ' + code); } catch { toast('Kod: ' + code); } }
+      return;
+    }
     if (act === 'msg-doctor') return toast('Mesajlaşma yakında — şimdilik fizyoterapistin bildirim alır');
     if (act === 'share-card') return shareCard(false);
     if (act === 'download-card') return shareCard(true);

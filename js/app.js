@@ -142,18 +142,24 @@
     /* Doctor */
     d_patients() {
       const st = S.get();
-      const list = st.patients.map(p => `
+      const needs = (p) => p.adherence < 50 || (p.couldnt && p.couldnt.length > 0);
+      const reason = (p) => (p.couldnt && p.couldnt.length) ? `<span class="badge danger"><i class="ti ti-alert-triangle"></i> ${esc(p.couldnt[0].reason || 'geri bildirim')}</span>` : `<span class="badge ${adherenceColor(p.adherence)}">%${p.adherence} uyum</span>`;
+      const card = (p, withReason) => `
         <button class="list-item" data-patient="${p.id}">
           <span class="avatar">${esc(p.initials)}</span>
-          <span style="flex:1"><span style="font-weight:600">${esc(p.name)}</span><br><span class="hint">${esc(p.condition)} · ${p.week}. hafta</span></span>
-          <span class="badge ${adherenceColor(p.adherence)}">%${p.adherence}</span>
+          <span style="flex:1"><span style="font-weight:600">${esc(p.name)}</span><br><span class="hint">${esc(p.condition)} · ${p.week}. hafta</span>${withReason ? '<br><span style="display:inline-block;margin-top:4px">' + reason(p) + '</span>' : ''}</span>
+          ${withReason ? '' : `<span class="badge ${adherenceColor(p.adherence)}">%${p.adherence}</span>`}
           <i class="ti ti-chevron-right" style="color:var(--ink-300)"></i>
-        </button>`).join('');
+        </button>`;
+      const attention = st.patients.filter(needs);
+      const others = st.patients.filter(p => !needs(p));
       return `<div class="appbar"><div class="brand"><img src="assets/logo.svg" alt="">Fizyon</div><div class="spacer"></div><span class="hint">${esc(st.doctor.name)}</span></div>
         <section class="screen">
-          <div class="row between" style="margin-bottom:6px"><h1>Hastalarım</h1><span class="badge teal">${st.patients.length}</span></div>
-          <p class="muted" style="margin-bottom:14px">Bugün takip edilmesi gerekenler önce gösterilir.</p>
-          <div class="card flush">${list}</div>
+          <div class="row between" style="margin-bottom:14px"><h1>Hastalarım</h1><span class="badge teal">${st.patients.length}</span></div>
+          ${attention.length ? `<h3 style="margin-bottom:8px;color:var(--danger)"><i class="ti ti-alert-circle" style="vertical-align:-2px"></i> Dikkat gerekenler (${attention.length})</h3>
+            <div class="card flush" style="border-color:var(--danger);margin-bottom:18px">${attention.map(p => card(p, true)).join('')}</div>` : ''}
+          ${others.length ? `<h3 style="margin-bottom:8px">${attention.length ? 'Diğer hastalar' : 'Hastalar'}</h3><div class="card flush">${others.map(p => card(p, false)).join('')}</div>` : ''}
+          ${!st.patients.length ? '<div class="card center" style="padding:32px 20px"><i class="ti ti-user-plus" style="font-size:38px;color:var(--ink-300)"></i><p class="muted mt16">Henüz hasta yok. Kodunu paylaşıp davet et.</p></div>' : ''}
           <button class="btn btn-primary mt16" data-act="new-patient"><i class="ti ti-plus"></i> Yeni hasta ekle</button>
         </section>
         ${tabbar('d_patients', 'doctor')}`;
@@ -195,7 +201,8 @@
         <section class="screen">
           <div class="row between" style="margin-bottom:8px"><h3>${esc(p.name)}</h3><span class="hint"><i class="ti ti-device-floppy" style="vertical-align:-2px"></i> otomatik kayıt</span></div>
           ${list}
-          <button class="btn btn-secondary mt8" data-act="open-library" data-id="${p.id}"><i class="ti ti-list-search"></i> Hazır hareket ekle</button>
+          <button class="btn btn-primary mt8" data-act="open-protocols" data-id="${p.id}"><i class="ti ti-stack-2"></i> Hazır program uygula</button>
+          <button class="btn btn-secondary mt8" data-act="open-library" data-id="${p.id}"><i class="ti ti-list-search"></i> Tek hareket ekle</button>
           <button class="btn btn-secondary mt8" data-act="record-own" data-id="${p.id}"><i class="ti ti-video"></i> Kendi videonu kaydet</button>
           <button class="btn btn-primary mt24" data-act="back"><i class="ti ti-check"></i> Bitir</button>
         </section>`;
@@ -554,6 +561,18 @@
       <div class="cat-row">${st.cats.map(([c, l]) => `<button class="chip ${sheetCat === c ? 'on' : ''}" data-act="set-cat" data-cat="${c}" data-id="${pid}">${l}</button>`).join('')}</div>
       ${presets.map(pr => `<button class="preset" data-act="pick-preset" data-pid="${pr.id}" data-id="${pid}"><span class="pv">${fzDemo(pr.demo)}</span><span style="flex:1"><span style="font-weight:600">${esc(pr.name)}</span><br><span class="hint">${pr.reps}×${pr.sets}${pr.hold ? ' · ' + pr.hold + ' sn' : ''}</span></span><i class="ti ti-plus" style="color:var(--teal-600);font-size:20px"></i></button>`).join('')}`;
   }
+  function protocolSheet(pid) {
+    const st = S.get(); const p = S.patient(pid);
+    // suggest protocols matching the patient's condition region first
+    const region = (p.condition || '').toLowerCase();
+    const match = (c) => region.includes('diz') ? c === 'diz' : region.includes('bel') ? c === 'bel' : region.includes('omuz') ? c === 'omuz' : false;
+    const list = [...st.protocols].sort((a, b) => (match(b.cat) ? 1 : 0) - (match(a.cat) ? 1 : 0));
+    return `<h3 style="margin-bottom:4px">Hazır program uygula</h3><p class="hint" style="margin-bottom:14px">Tek dokunuşla tüm hareketleri ekle. Sonra düzenleyebilirsin.</p>
+      ${list.map(pt => `<button class="preset" data-act="apply-protocol" data-pid="${pt.id}" data-id="${pid}" style="align-items:flex-start">
+        <span class="pv" style="background:var(--teal-50);color:var(--teal-600)"><i class="ti ti-stack-2" style="font-size:22px"></i></span>
+        <span style="flex:1"><span style="font-weight:600">${esc(pt.name)}</span><br><span class="hint">${esc(pt.desc)}</span>${match(pt.cat) ? ' <span class="badge teal" style="font-size:10px">önerilen</span>' : ''}</span>
+        <i class="ti ti-plus" style="color:var(--teal-600);font-size:20px"></i></button>`).join('')}`;
+  }
   function configSheet(pid, pr) {
     return `<h3 style="margin-bottom:4px">${esc(pr.name)}</h3><p class="hint" style="margin-bottom:14px">Hastana göre ayarla</p>
       <div class="demo-stage" style="height:120px;margin-bottom:14px">${fzDemo(pr.demo)}</div>
@@ -756,6 +775,17 @@
     if (act === 'close-sheet') { closeSheet(); return render(); }
 
     /* builder + library */
+    if (act === 'open-protocols') return openSheet(protocolSheet(d.id));
+    if (act === 'apply-protocol') {
+      const pt = st.protocols.find(x => x.id === d.pid); const p = S.patient(d.id);
+      const exs = pt.items.map(it => { const pr = st.presets.find(x => x.id === it.preset); return { name: pr.name, demo: pr.demo, reps: pr.reps, sets: pr.sets, hold: pr.hold, note: pr.note, verify: it.verify ? 'Hareketi yap ve kameraya göster' : null }; });
+      closeSheet();
+      if (S.isCloud()) {
+        Promise.all(exs.map(ex => window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, note: ex.note, verify_text: ex.verify, created_by: st.doctor.id })))
+          .then(async () => { await refreshProgram(p.id); render(); toast(pt.name + ' uygulandı'); }).catch(() => toast('Uygulanamadı'));
+      } else { exs.forEach((ex, i) => p.program.push({ id: 'e' + (Date.now() + i), ...ex, done: false })); S.save(); render(); toast(pt.name + ' uygulandı'); }
+      return;
+    }
     if (act === 'open-library') { sheetCat = 'all'; return openSheet(librarySheet(d.id)); }
     if (act === 'set-cat') { sheetCat = d.cat; return openSheet(librarySheet(d.id)); }
     if (act === 'pick-preset') { cfgVerify = false; const pr = st.presets.find(x => x.id === d.pid); return openSheet(configSheet(d.id, pr)); }
@@ -883,7 +913,7 @@
     const base = {
       session: { role: profile.role, id: profile.id, cloud: true }, cloud: true, code: profile.code || null,
       settings: { gamify: true, notif: structuredClone(seed.settings.notif) },
-      presets: structuredClone(seed.presets), cats: structuredClone(seed.cats), badges: structuredClone(seed.badges),
+      presets: structuredClone(seed.presets), cats: structuredClone(seed.cats), badges: structuredClone(seed.badges), protocols: structuredClone(seed.protocols),
       doctor: { id: '', name: '', license: '' }, patients: []
     };
     if (profile.role === 'doctor') {

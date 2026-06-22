@@ -45,6 +45,19 @@ window.FZ = (function () {
       { id: 'pr8', name: 'Duvar squat', demo: 'squat', cat: 'genel', reps: 8, sets: 3, hold: 10, note: 'Sırtın duvara yaslı, 90 derece.' }
     ],
     cats: [['all', 'Tümü'], ['diz', 'Diz'], ['bel', 'Bel'], ['omuz', 'Omuz'], ['genel', 'Genel']],
+    // Ready-made protocols — a doctor applies a full program in one tap.
+    protocols: [
+      { id: 'pt_diz1', name: 'Diz — Erken dönem (Hafta 1-2)', cat: 'diz', desc: '3 hareket · nazik başlangıç',
+        items: [{ preset: 'pr2' }, { preset: 'pr1' }, { preset: 'pr3', verify: true }] },
+      { id: 'pt_diz2', name: 'Diz — Güçlendirme (Hafta 3+)', cat: 'diz', desc: '3 hareket · denge + kuvvet',
+        items: [{ preset: 'pr1', verify: true }, { preset: 'pr8' }, { preset: 'pr3', verify: true }] },
+      { id: 'pt_bel1', name: 'Bel — Stabilizasyon', cat: 'bel', desc: '2 hareket · çekirdek',
+        items: [{ preset: 'pr4', verify: true }, { preset: 'pr5' }] },
+      { id: 'pt_omuz1', name: 'Omuz — Mobilite', cat: 'omuz', desc: '2 hareket · sıkışma sonrası',
+        items: [{ preset: 'pr7' }, { preset: 'pr6', verify: true }] },
+      { id: 'pt_genel1', name: 'Genel — Günlük hareketlilik', cat: 'genel', desc: '3 hareket · bakım',
+        items: [{ preset: 'pr1' }, { preset: 'pr4' }, { preset: 'pr3' }] }
+    ],
     badges: [
       { id: 'b1', name: 'İlk adım', icon: 'ti-shoe', got: true },
       { id: 'b2', name: '7 gün seri', icon: 'ti-flame', got: false },
@@ -65,6 +78,7 @@ window.FZ = (function () {
       if (s.settings.gamify === undefined) s.settings.gamify = true;
       if (!s.presets) s.presets = structuredClone(seed.presets);
       if (!s.cats) s.cats = structuredClone(seed.cats);
+      if (!s.protocols) s.protocols = structuredClone(seed.protocols);
       (s.patients || []).forEach(p => { if (p.notif && !p.notif.autoActions) p.notif.autoActions = ['notifyDoctor']; });
       return s;
     } catch { return structuredClone(seed); }

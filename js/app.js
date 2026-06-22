@@ -10,6 +10,9 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const $ = (sel, root = app) => root.querySelector(sel);
   const $$ = (sel, root = app) => [...root.querySelectorAll(sel)];
+  const CUES = { squat: 'Yavaşça çök, sonra kalk', legraise: 'Bacağını düz kaldır, yavaşça indir', balance: 'Tek ayak üstünde sabit dur', bridge: 'Kalçanı yukarı kaldır, indir', shoulder: 'Kolunu kontrollü hareket ettir', generic: 'Yavaş ve kontrollü hareket et' };
+  const cueFor = (demo) => CUES[demo] || CUES.generic;
+  const targetText = (e) => (e.reps > 1 ? e.reps + ' tekrar' : (e.hold || 5) + ' sn dur');
 
   function go(route, p = {}) { params = p; stack.push(route); render(); }
   function replace(route, p = {}) { params = p; stack[stack.length - 1] = route; render(); }
@@ -313,6 +316,7 @@
             <span class="badge teal demo-src"><i class="ti ti-${e.video ? 'video' : 'sparkles'}"></i> ${e.video ? 'Hekimin kaydı' : 'Hazır animasyon'}</span>
             ${fzDemo(e.demo)}
           </div>
+          <p class="caption center" style="margin:10px 0 0"><i class="ti ti-info-circle" style="vertical-align:-2px"></i> ${esc(cueFor(e.demo))} · ${esc(targetText(e))}</p>
           ${e.note ? `<div class="card mt16" style="background:var(--teal-50);border-color:var(--teal-100)"><span class="caption" style="color:var(--teal-600)"><i class="ti ti-bulb"></i> Hekim notu</span><p class="mt8" style="color:var(--teal-700)">${esc(e.note)}</p></div>` : ''}
           <div class="card mt16 center">
             <div class="timer-ring" id="tring"><div class="inner"><span class="timer" id="tval">${e.hold || e.reps}</span><span class="hint" id="tlbl">${e.hold ? 'saniye tut' : 'tekrar'}</span></div></div>
@@ -330,7 +334,8 @@
       const e = p.program.find(x => x.id === params.eid) || p.program.find(x => x.verify) || p.program[0];
       return `${appbar('Kanıtla', { back: true })}
         <section class="screen">
-          <p class="muted" style="margin-bottom:12px"><i class="ti ti-shield-check" style="color:var(--teal-600);vertical-align:-2px"></i> ${esc(e.verify || 'Hareketi yap ve kameraya göster')}</p>
+          <p class="muted" style="margin-bottom:4px"><i class="ti ti-shield-check" style="color:var(--teal-600);vertical-align:-2px"></i> ${esc(cueFor(e.demo))}</p>
+          <p class="hint" style="margin-bottom:12px">Hedef: <b>${esc(targetText(e))}</b> — kamera sayacak.</p>
           <div class="cam-stage" id="camStage">
             <div class="cam-live"><span class="dot"></span> CANLI</div>
             <div class="ring cam-prog" id="camProg" style="--p:0"><span id="camPct">0%</span></div>
@@ -528,26 +533,43 @@
   }
   function runPose(e, video, canvas, hint) {
     const ctx = canvas.getContext('2d');
-    let held = 0; const need = 28; // ~ a few seconds of a clear pose
+    const conns = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]];
+    const repMode = (e.reps || 1) > 1;          // count actual reps vs. validate a hold
+    const targetReps = e.reps || 10, targetSec = e.hold || 5;
+    let baseline = null, state = 'up', reps = 0, heldSec = 0, lastT = performance.now();
+    const prog = $('#camProg'), pctEl = $('#camPct');
+    const setProg = (frac, label) => { if (prog) prog.style.setProperty('--p', Math.min(100, Math.round(frac * 100))); if (pctEl) pctEl.textContent = label; };
+    setProg(0, repMode ? '0/' + targetReps : '0 sn');
     const loop = () => {
       if (camStop || !camLandmarker || !video.videoWidth) { if (!camStop) camRAF = requestAnimationFrame(loop); return; }
       canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       let res; try { res = camLandmarker.detectForVideo(video, performance.now()); } catch { camRAF = requestAnimationFrame(loop); return; }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
       const lm = res.landmarks && res.landmarks[0];
-      if (lm) {
-        const conns = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]];
-        ctx.strokeStyle = css('--teal-500') || '#149A7E'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-        conns.forEach(([a, b]) => { if (lm[a] && lm[b]) { ctx.beginPath(); ctx.moveTo(lm[a].x * canvas.width, lm[a].y * canvas.height); ctx.lineTo(lm[b].x * canvas.width, lm[b].y * canvas.height); ctx.stroke(); } });
-        ctx.fillStyle = css('--teal-500') || '#149A7E';
-        lm.forEach(pt => { ctx.beginPath(); ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 5, 0, 7); ctx.fill(); });
-        const visible = lm.filter(p => (p.visibility ?? 1) > 0.6).length;
-        if (visible > 20) { held++; hint.textContent = 'Harika — pozu koru…'; }
-        else { held = Math.max(0, held - 1); hint.textContent = 'Tüm vücudun görünsün'; }
-        const pct = Math.min(100, Math.round(held / need * 100));
-        const prog = $('#camProg'), pctEl = $('#camPct'); if (prog) prog.style.setProperty('--p', pct); if (pctEl) pctEl.textContent = pct + '%';
-        if (held >= need) { verifySuccess(e); return; }
-      } else { hint.textContent = 'Vücudun kameraya görünsün'; }
+      if (!lm) { hint.textContent = 'Vücudun kameraya görünsün'; if (!repMode) heldSec = Math.max(0, heldSec - dt); camRAF = requestAnimationFrame(loop); return; }
+      ctx.strokeStyle = css('--teal-500') || '#149A7E'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      conns.forEach(([a, b]) => { if (lm[a] && lm[b]) { ctx.beginPath(); ctx.moveTo(lm[a].x * canvas.width, lm[a].y * canvas.height); ctx.lineTo(lm[b].x * canvas.width, lm[b].y * canvas.height); ctx.stroke(); } });
+      ctx.fillStyle = css('--teal-500') || '#149A7E';
+      lm.forEach(pt => { ctx.beginPath(); ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 5, 0, 7); ctx.fill(); });
+      const visible = lm.filter(p => (p.visibility ?? 1) > 0.5).length;
+      if (visible < 18) { hint.textContent = 'Tüm vücudun kameraya görünsün'; camRAF = requestAnimationFrame(loop); return; }
+      if (repMode) {
+        // count reps from vertical oscillation of the hips (down→up = 1 rep)
+        const hipY = (lm[23].y + lm[24].y) / 2;
+        if (baseline === null) baseline = hipY;
+        baseline = baseline * 0.98 + hipY * 0.02; // adapt to the standing position
+        const delta = hipY - baseline;            // + = lower (e.g. squatting)
+        if (state === 'up' && delta > 0.05) { state = 'down'; hint.textContent = 'Şimdi kalk ⬆'; }
+        else if (state === 'down' && delta < 0.02) { state = 'up'; reps++; setProg(reps / targetReps, reps + '/' + targetReps); hint.textContent = 'Güzel! ' + reps + '/' + targetReps; if (reps >= targetReps) { verifySuccess(e); return; } }
+        else if (state === 'up' && !reps) hint.textContent = 'Hareketi yapmaya başla';
+      } else {
+        // validate a steady hold for the prescribed seconds
+        heldSec = Math.min(targetSec, heldSec + dt);
+        setProg(heldSec / targetSec, heldSec.toFixed(1) + ' sn');
+        hint.textContent = 'Pozu koru…';
+        if (heldSec >= targetSec) { verifySuccess(e); return; }
+      }
       camRAF = requestAnimationFrame(loop);
     };
     camRAF = requestAnimationFrame(loop);

@@ -4,6 +4,7 @@
   const S = window.FZ;
   let stack = ['welcome'];       // navigation stack
   let params = {};               // current route params
+  let session = null;            // guided session: { ids:[exerciseId], i }
 
   /* ---------- helpers ---------- */
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -14,6 +15,12 @@
   function replace(route, p = {}) { params = p; stack[stack.length - 1] = route; render(); }
   function back() { if (stack.length > 1) { stack.pop(); render(); } }
   function home() { const st = S.get(); stack = [st.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); }
+  function sessionAdvance() {
+    if (!session) { home(); return; }
+    session.i++;
+    if (session.i >= session.ids.length) { session = null; stack = ['p_done']; render(); return; }
+    replace('p_exercise', { eid: session.ids[session.i], session: true });
+  }
 
   function toast(msg) {
     const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
@@ -263,8 +270,10 @@
 
     /* Patient */
     p_today() {
+      session = null; // landing home cancels any running session
       const st = S.get(); const p = st.patients[0];
       const done = p.program.filter(e => e.done).length;
+      const remaining = p.program.filter(e => !e.done).length;
       const items = p.program.map(e => `
         <button class="list-item" data-exercise="${e.id}">
           <i class="ti ${e.done ? 'ti-circle-check' : 'ti-circle'}" style="font-size:24px;color:${e.done ? 'var(--teal-600)' : 'var(--ink-300)'}"></i>
@@ -282,6 +291,7 @@
           <h1>Bugün</h1>
           <p class="muted" style="margin-bottom:14px">Salı · ${p.program.length} hareket · ~10 dk · ${done}/${p.program.length} tamam</p>
           <div class="bar" style="margin-bottom:16px"><i style="width:${p.program.length ? done / p.program.length * 100 : 0}%"></i></div>
+          ${remaining ? `<button class="btn btn-primary" data-act="start-session" style="margin-bottom:16px"><i class="ti ti-player-play"></i> Seansa başla (${remaining} hareket)</button>` : (p.program.length ? '<div class="card center" style="background:var(--teal-50);border-color:var(--teal-100);margin-bottom:16px"><p style="color:var(--teal-700);margin:0"><i class="ti ti-circle-check"></i> Bugünü tamamladın! 🎉</p></div>' : '')}
           <div class="card" style="background:var(--teal-50);border-color:var(--teal-100)">
             <span class="caption" style="color:var(--teal-600)"><i class="ti ti-quote"></i> ${esc(S.get().doctor.name)}</span>
             <p class="mt8" style="color:var(--teal-700)">${esc(p.note)}</p>
@@ -375,6 +385,19 @@
           <button class="btn btn-accent mt16" data-act="share-card"><i class="ti ti-share"></i> Paylaş</button>
           <button class="btn btn-secondary mt8" data-act="download-card"><i class="ti ti-download"></i> Görseli indir</button>
           <p class="hint center mt16">Kartta hastalık adı yok — istediğin yerde paylaşabilirsin.</p>
+        </section>`;
+    },
+
+    p_done() {
+      const st = S.get(); const p = st.patients[0];
+      return `${appbar('Seans tamam')}
+        <section class="screen center" style="padding-top:30px">
+          <div style="width:72px;height:72px;border-radius:50%;background:var(--teal-50);color:var(--teal-600);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><i class="ti ti-circle-check" style="font-size:38px"></i></div>
+          <h2>Harika iş! 🎉</h2>
+          <p class="muted mt8">Bugünün seansını tamamladın. Hekimine iletildi.</p>
+          ${st.settings.gamify ? `<div class="card" style="background:var(--coral-50);border-color:var(--coral-100);max-width:280px;margin:18px auto 0"><div style="font-size:28px;font-weight:600;color:var(--coral-600)"><i class="ti ti-flame"></i> ${p.streak} gün</div><div class="hint">seri sürüyor</div></div>` : ''}
+          <button class="btn btn-primary mt24" data-nav="p_today" style="max-width:240px;margin:24px auto 0">Bugüne dön</button>
+          ${st.settings.gamify ? `<button class="btn btn-accent mt8" data-go="p_achievement" style="max-width:240px;margin:8px auto 0"><i class="ti ti-share"></i> Başarını paylaş</button>` : ''}
         </section>`;
     },
 
@@ -541,7 +564,7 @@
     S.save();
     const stage = $('#camStage');
     if (stage) stage.insertAdjacentHTML('beforeend', `<div class="verify-ok"><i class="ti ti-circle-check"></i><div style="font-size:18px;font-weight:600">Doğrulandı!</div>${st.settings.gamify ? '<div class="badge" style="background:rgba(255,255,255,.2);color:#fff">+30 puan</div>' : ''}</div>`);
-    setTimeout(() => { home(); toast('Kanıt hekime gönderildi'); }, 1500);
+    setTimeout(() => { toast('Kanıt hekime gönderildi'); if (session) sessionAdvance(); else home(); }, 1500);
   }
 
   /* ---- bottom sheets ---- */
@@ -808,11 +831,12 @@
     }
 
     /* player + verify */
+    if (act === 'start-session') { const p = st.patients[0]; const ids = p.program.filter(e => !e.done).map(e => e.id); if (!ids.length) return toast('Bugün zaten tamam'); session = { ids, i: 0 }; return go('p_exercise', { eid: ids[0], session: true }); }
     if (act === 'goverify') return go('p_verify', { eid: d.eid });
     if (act === 'complete-ex') {
       const p = st.patients[0]; const ex = p.program.find(x => x.id === d.eid); if (ex) ex.done = true; if (st.settings.gamify) p.points += 20;
       if (S.isCloud()) window.FZ_API.logCompletion({ exercise_id: d.eid, patient_id: p.id, verified: false }).catch(() => {});
-      S.save(); home(); return toast('Tamamlandı');
+      S.save(); toast('Tamamlandı'); if (session) return sessionAdvance(); return home();
     }
     if (act === 'sim-verify') { const p = st.patients[0]; return verifySuccess(p.program.find(x => x.id === d.eid) || p.program[0]); }
 
@@ -823,7 +847,7 @@
       const p = st.patients[0]; const txt = ($('#couldntText', document) || {}).value || '';
       p.couldnt.unshift({ day: 'Bugün', reason: reasonPick || 'Belirtilmedi', text: txt.trim() });
       if (S.isCloud()) window.FZ_API.sendFeedback({ patient_id: p.id, exercise_id: d.eid || null, reason: reasonPick || 'Belirtilmedi', note: txt.trim() }).catch(() => {});
-      S.save(); closeSheet(); back(); return toast('Hekimine iletildi');
+      S.save(); closeSheet(); toast('Hekimine iletildi'); if (session) return sessionAdvance(); return back();
     }
   });
   function saveNotif(p) { S.save(); if (S.isCloud()) window.FZ_API.setNotif(p.id, { tone: p.notif.tone, times: p.notif.times, inactive_days: p.notif.escalateDays, auto_actions: p.notif.autoActions }).catch(() => {}); }

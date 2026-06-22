@@ -149,7 +149,7 @@
           <h3 style="margin:18px 0 8px">Geri bildirim</h3>
           ${couldnt}
 
-          <div class="card mt16 row between"><div><div class="caption">Sonraki randevu</div><div style="font-weight:600">${esc(p.nextAppt)}</div></div><i class="ti ti-calendar-event" style="font-size:24px;color:var(--teal-600)"></i></div>
+          <button class="list-item card mt16" data-act="edit-appt" data-id="${p.id}" style="border-radius:var(--r-lg)"><div style="flex:1"><div class="caption">Sonraki randevu</div><div style="font-weight:600">${esc(p.nextAppt)}</div></div><i class="ti ti-calendar-event" style="font-size:24px;color:var(--teal-600)"></i></button>
         </section>`;
     },
 
@@ -168,8 +168,20 @@
           <div class="row between" style="margin-bottom:8px"><h3>${esc(p.name)}</h3><span class="hint"><i class="ti ti-device-floppy" style="vertical-align:-2px"></i> otomatik kayıt</span></div>
           ${list}
           <button class="btn btn-secondary mt8" data-act="open-library" data-id="${p.id}"><i class="ti ti-list-search"></i> Hazır hareket ekle</button>
-          <button class="btn btn-secondary mt8" data-act="record-own"><i class="ti ti-video"></i> Kendi videonu kaydet</button>
+          <button class="btn btn-secondary mt8" data-act="record-own" data-id="${p.id}"><i class="ti ti-video"></i> Kendi videonu kaydet</button>
           <button class="btn btn-primary mt24" data-act="back"><i class="ti ti-check"></i> Bitir</button>
+        </section>`;
+    },
+
+    d_newpatient() {
+      return `${appbar('Yeni hasta', { back: true })}
+        <section class="screen">
+          <p class="muted" style="margin-bottom:16px">Birkaç bilgiyle başla — programı sonra eklersin.</p>
+          <div class="field"><label for="npName">Ad soyad</label><input class="input" id="npName" placeholder="Hasta adı" autocomplete="off"></div>
+          <div class="field"><label for="npCond">Durum / bölge</label><input class="input" id="npCond" placeholder="Örn. Sol diz — menisküs"></div>
+          <div class="field"><label for="npWeek">Tedavi haftası</label><input class="input" id="npWeek" type="number" value="1" min="1" inputmode="numeric"></div>
+          <div class="err-msg" id="npErr" hidden></div>
+          <button class="btn btn-primary mt8" data-act="create-patient"><i class="ti ti-check"></i> Hasta oluştur</button>
         </section>`;
     },
 
@@ -498,7 +510,7 @@
     s.addEventListener('click', (ev) => { if (ev.target === s) closeSheet(); });
     document.body.appendChild(s);
   }
-  function closeSheet() { const s = $('#fzSheet', document); if (s) s.remove(); }
+  function closeSheet() { const s = $('#fzSheet', document); if (s) { stopCamera(); s.remove(); } }
   function librarySheet(pid) {
     const st = S.get();
     const presets = st.presets.filter(pr => sheetCat === 'all' || pr.cat === sheetCat);
@@ -580,6 +592,26 @@
     }, 'image/png');
   }
 
+  function recordSheet(pid) {
+    return `<h3 style="margin-bottom:4px">Kendi videonu kaydet</h3><p class="hint" style="margin-bottom:12px">Hastanın yaptığı hareketi kaydet</p>
+      <div class="cam-stage" style="aspect-ratio:4/3;margin-bottom:12px"><video id="rvCam" autoplay playsinline muted></video><div class="cam-hint" id="rvHint">Hazır olunca kaydı başlat</div></div>
+      <div class="field"><label for="rvName">Hareket adı</label><input id="rvName" class="input" value="Özel hareket"></div>
+      <div class="num-row"><div class="field"><label>Tekrar</label><input id="rvReps" class="input" type="number" value="10"></div><div class="field"><label>Set</label><input id="rvSets" class="input" type="number" value="3"></div><div class="field"><label>Süre</label><input id="rvHold" class="input" type="number" value="0"></div></div>
+      <button class="btn btn-accent" id="rvRec" data-act="rv-record" data-id="${pid}"><i class="ti ti-video"></i> Kaydı başlat</button>`;
+  }
+  async function startPreview() {
+    const v = $('#rvCam', document); if (!v) return;
+    camStop = false;
+    try { camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); v.srcObject = camStream; await v.play().catch(() => {}); const h = $('#rvHint', document); if (h) h.textContent = 'Hazır olunca kaydı başlat'; }
+    catch (e) { const h = $('#rvHint', document); if (h) h.textContent = 'Kamera yok — demoda yine kaydedebilirsin'; }
+  }
+  const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  function apptSheet(p) {
+    return `<h3 style="margin-bottom:4px">Randevu</h3><p class="hint" style="margin-bottom:14px">${esc(p.name)} · sonraki randevu</p>
+      <div class="field"><label for="apDate">Tarih</label><input class="input" id="apDate" type="date"></div>
+      <div class="field"><label for="apTime">Saat</label><input class="input" id="apTime" type="time" value="14:00"></div>
+      <button class="btn btn-primary" data-act="save-appt" data-id="${p.id}"><i class="ti ti-check"></i> Kaydet</button>`;
+  }
   function reminderSheet(p) {
     return `<h3 style="margin-bottom:4px">Hatırlatma</h3><p class="hint" style="margin-bottom:14px">Egzersiz hatırlatma saatlerin</p>
       <div class="row gap8" style="flex-wrap:wrap;margin-bottom:16px">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ptime" data-t="${t}">${t}</button>`).join('')}</div>
@@ -616,9 +648,38 @@
     if (act === 'logout') { st.session = null; S.save(); stack = ['welcome']; return render(); }
     if (act === 'reset') { S.reset(); stack = ['welcome']; toast('Demo sıfırlandı'); return render(); }
     if (act === 'toggle-gamify') { st.settings.gamify = !st.settings.gamify; S.save(); return render(); }
-    if (act === 'new-patient') return toast('Hasta ekleme akışı yakında');
+    if (act === 'new-patient') return go('d_newpatient');
+    if (act === 'create-patient') {
+      const name = ($('#npName', document).value || '').trim();
+      const err = $('#npErr', document);
+      if (name.length < 2) { err.hidden = false; err.innerHTML = '<i class="ti ti-alert-circle"></i> Lütfen hastanın adını gir.'; return; }
+      const initials = name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toLocaleUpperCase('tr');
+      const id = 'p' + Date.now();
+      st.patients.push({ id, name, initials, condition: ($('#npCond', document).value || '').trim() || 'Belirtilmedi', week: +$('#npWeek', document).value || 1, adherence: 0, streak: 0, points: 0, journeyStage: 1, history: [0, 0, 0, 0, 0, 0, 0], note: '', nextAppt: 'Planlanmadı', notif: { tone: 'normal', times: ['18:00'], escalateDays: 2, autoActions: ['notifyDoctor'] }, couldnt: [], program: [] });
+      S.save(); stack = ['d_patients']; go('d_patient', { id }); return toast(name + ' eklendi');
+    }
+    if (act === 'edit-appt') return openSheet(apptSheet(S.patient(d.id)));
+    if (act === 'save-appt') {
+      const dv = $('#apDate', document).value, tv = $('#apTime', document).value || '14:00';
+      const p = S.patient(d.id);
+      if (dv) { const dt = new Date(dv + 'T00:00'); p.nextAppt = `${dt.getDate()} ${MONTHS[dt.getMonth()]}, ${tv}`; }
+      S.save(); closeSheet(); render(); return toast('Randevu güncellendi');
+    }
     if (act === 'build') return go('d_build', { id: d.id });
-    if (act === 'record-own') return toast('Video kaydı yakında — şimdilik hazır animasyon kullanılır');
+    if (act === 'record-own') { openSheet(recordSheet(d.id)); startPreview(); return; }
+    if (act === 'rv-record') {
+      const btn = t, hint = $('#rvHint', document); btn.disabled = true; let n = 3;
+      hint.textContent = 'Kayıt: 3'; hint.style.background = 'rgba(214,69,69,.7)';
+      const iv = setInterval(() => {
+        n--;
+        if (n > 0) { hint.textContent = 'Kayıt: ' + n; return; }
+        clearInterval(iv);
+        const p = S.patient(d.id);
+        p.program.push({ id: 'e' + Date.now(), name: ($('#rvName', document).value || 'Özel hareket').trim(), demo: 'generic', video: true, reps: +$('#rvReps', document).value || 10, sets: +$('#rvSets', document).value || 3, hold: +$('#rvHold', document).value || 0, note: '', verify: null, done: false });
+        S.save(); stopCamera(); closeSheet(); render(); toast('Video kaydedildi ✓');
+      }, 800);
+      return;
+    }
 
     /* notifications */
     if (act === 'ntog') { st.settings.notif[d.k] = !st.settings.notif[d.k]; S.save(); return render(); }

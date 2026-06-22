@@ -13,9 +13,9 @@ Each feature is built, then **tested with Playwright**, before the next. Status:
 - ☑ Program builder + preset library + config sheet (reps/time/note/verify, autosave) — TESTED
 - ☑ Progress + analytics charts (patient-detail + Analiz tab: comparison + trend) — TESTED
 - ☑ Notifications: general + patient-specific + **automatic follow-up rules** (inactive-days trigger + actions: notify/remind/call/message) — TESTED
-- ☐ Appointments (basic view exists; editing pending)
-- ☐ New-patient flow
-- ☐ Doctor video recording (record-own)
+- ☑ Appointments — editable (date/time sheet) — TESTED
+- ☑ New-patient flow (create with validation → detail) — TESTED
+- ☑ Doctor video recording (record-own: camera preview + simulated capture → custom exercise) — TESTED
 
 ## New (requested 2026-06-22)
 - ☑ Bottom nav redesigned entirely (floating pill, active tab labelled) — TESTED

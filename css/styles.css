@@ -33,6 +33,7 @@ button{font-family:inherit}
 
 /* App frame — phone-centered */
 #app{max-width:var(--maxw);margin:0 auto;min-height:100%;background:var(--bg);position:relative;display:flex;flex-direction:column}
+#app.big-text{zoom:1.15}  /* accessibility: larger text/targets for older users */
 .screen{flex:1;padding:20px 18px 96px;animation:enter .2s ease-out}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.screen{animation:none}*{transition:none!important}}

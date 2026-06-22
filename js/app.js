@@ -13,6 +13,8 @@
   const CUES = { squat: 'Yavaşça çök, sonra kalk', legraise: 'Bacağını düz kaldır, yavaşça indir', balance: 'Tek ayak üstünde sabit dur', bridge: 'Kalçanı yukarı kaldır, indir', shoulder: 'Kolunu kontrollü hareket ettir', generic: 'Yavaş ve kontrollü hareket et' };
   const cueFor = (demo) => CUES[demo] || CUES.generic;
   const targetText = (e) => (e.reps > 1 ? e.reps + ' tekrar' : (e.hold || 5) + ' sn dur');
+  const uiGet = (k) => { try { return localStorage.getItem('fizyon.ui.' + k) === '1'; } catch { return false; } };
+  const uiSet = (k, v) => { try { localStorage.setItem('fizyon.ui.' + k, v ? '1' : '0'); } catch {} };
 
   function go(route, p = {}) { params = p; stack.push(route); render(); }
   function replace(route, p = {}) { params = p; stack[stack.length - 1] = route; render(); }
@@ -423,6 +425,7 @@
       <div class="row" style="margin-bottom:18px"><span class="avatar lg">${esc(inits)}</span><div><div style="font-weight:600;font-size:18px">${esc(name)}</div><div class="hint">${sub}${st.cloud ? '' : ' · demo'}</div></div></div>
       ${role === 'doctor' && st.cloud ? `<div class="card"><div class="caption">Fizyoterapist kodun</div><div class="row between" style="margin-top:6px"><div style="font-weight:700;letter-spacing:3px;font-size:22px;color:var(--teal-700)">${esc(st.code || '—')}</div><div class="row gap8"><button class="btn sm btn-secondary" data-act="copy-code" data-code="${esc(st.code || '')}"><i class="ti ti-copy"></i> Kopyala</button><button class="btn sm btn-secondary" data-act="new-patient"><i class="ti ti-user-plus"></i> Davet</button></div></div></div>` : ''}
       ${role === 'patient' ? `<div class="card row between"><div><div style="font-weight:600">Oyunlaştırma</div><div class="hint">Puan, seri ve ödülleri göster</div></div><button class="chip ${st.settings.gamify ? 'on' : ''}" data-act="toggle-gamify">${st.settings.gamify ? 'Açık' : 'Kapalı'}</button></div>` : ''}
+      <div class="card row between"><div><div style="font-weight:600">Büyük yazı</div><div class="hint">Daha büyük metin ve butonlar</div></div><button class="chip ${uiGet('bigText') ? 'on' : ''}" data-act="toggle-bigtext">${uiGet('bigText') ? 'Açık' : 'Kapalı'}</button></div>
       <div class="card flush mt16">
         <a class="list-item" href="privacy.html" target="_blank" style="text-decoration:none"><i class="ti ti-lock" style="color:var(--ink-500)"></i><span style="flex:1">Gizlilik ve güvenlik</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
         <a class="list-item" href="terms.html" target="_blank" style="text-decoration:none"><i class="ti ti-file-text" style="color:var(--ink-500)"></i><span style="flex:1">Kullanım koşulları</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
@@ -437,6 +440,7 @@
     stopCamera();
     if (timerInt) { clearInterval(timerInt); timerInt = null; }
     const route = stack[stack.length - 1];
+    app.classList.toggle('big-text', uiGet('bigText'));
     app.innerHTML = (screens[route] || screens.welcome)();
     window.scrollTo(0, 0);
 
@@ -734,8 +738,10 @@
       <button class="btn btn-primary" data-act="save-clinical" data-id="${p.id}"><i class="ti ti-check"></i> Kaydet</button>`;
   }
   function reminderSheet(p) {
+    const granted = ('Notification' in window) && Notification.permission === 'granted';
     return `<h3 style="margin-bottom:4px">Hatırlatma</h3><p class="hint" style="margin-bottom:14px">Egzersiz hatırlatma saatlerin</p>
-      <div class="row gap8" style="flex-wrap:wrap;margin-bottom:16px">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ptime" data-t="${t}">${t}</button>`).join('')}</div>
+      <div class="row gap8" style="flex-wrap:wrap;margin-bottom:14px">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ptime" data-t="${t}">${t}</button>`).join('')}</div>
+      ${granted ? '<div class="card" style="background:var(--teal-50);border-color:var(--teal-100);margin-bottom:12px"><p style="color:var(--teal-700);font-size:14px;margin:0"><i class="ti ti-bell-check"></i> Bildirimler açık.</p></div>' : '<button class="btn btn-secondary" data-act="enable-notif" style="margin-bottom:12px"><i class="ti ti-bell"></i> Telefon bildirimine izin ver</button>'}
       <button class="btn btn-primary" data-act="close-sheet"><i class="ti ti-check"></i> Kaydet</button>`;
   }
 
@@ -773,6 +779,7 @@
     if (act === 'logout') { try { if (S.isCloud()) window.FZ_API.signOut(); } catch (e) {} S.logout(); stack = ['welcome']; return render(); }
     if (act === 'reset') { S.reset(); stack = ['welcome']; toast('Sıfırlandı'); return render(); }
     if (act === 'toggle-gamify') { st.settings.gamify = !st.settings.gamify; if (S.isCloud()) window.FZ_API.setGamification(st.patients[0].id, { gamify_enabled: st.settings.gamify }).catch(() => {}); S.save(); return render(); }
+    if (act === 'toggle-bigtext') { uiSet('bigText', !uiGet('bigText')); return render(); }
     if (act === 'new-patient') { if (S.isCloud()) return openSheet(inviteSheet(st.code)); return go('d_newpatient'); }
     if (act === 'create-patient') {
       const name = ($('#npName', document).value || '').trim();
@@ -835,6 +842,14 @@
     if (act === 'share-card') return shareCard(false);
     if (act === 'download-card') return shareCard(true);
     if (act === 'reminder') return openSheet(reminderSheet(st.patients[0]));
+    if (act === 'enable-notif') {
+      if (!('Notification' in window)) return toast('Bu cihaz bildirimi desteklemiyor');
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') { try { new Notification('Fizyon', { body: 'Hatırlatmalar açık — egzersiz zamanında haber vereceğiz.', icon: 'assets/logo.svg' }); } catch (e) {} toast('Bildirimler açıldı'); openSheet(reminderSheet(st.patients[0])); }
+        else toast('Bildirim izni verilmedi');
+      }).catch(() => toast('İzin alınamadı'));
+      return;
+    }
     if (act === 'ptime') { const p = st.patients[0]; const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } saveNotif(p); return openSheet(reminderSheet(p)); }
     if (act === 'close-sheet') { closeSheet(); return render(); }
 

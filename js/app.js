@@ -838,9 +838,10 @@
       const { data, error } = await window.FZ_API.signUp({ email: $('#re').value.trim(), password: $('#rpw').value, fullName: name, role, license: role === 'doctor' ? $('#rl').value.trim() : null, doctorCode: role === 'patient' ? ($('#rdc').value || '').trim() : null });
       if (error) throw error;
       if (data.session) {
-        await window.FZ_API.setConsent();
-        const st = S.get(); st.session = { role, id: role === 'doctor' ? 'd1' : 'p1', cloud: true }; S.save();
-        toast('Hesabın oluşturuldu (bulut)'); home();
+        const cs = await window.__fzBuildCloudState();
+        if (!cs) throw new Error('profil');
+        S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render();
+        toast('Hesabın oluşturuldu');
       } else {
         // email confirmation required (secure default)
         replace('reg_done', { email: $('#re').value.trim() });

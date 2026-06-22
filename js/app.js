@@ -177,11 +177,12 @@
 
     d_patient() {
       const p = S.patient(params.id); if (!p) { return screens.d_patients(); }
-      const couldnt = p.couldnt.map(c => `<div class="card" style="border-color:var(--warn)"><span class="badge warn"><i class="ti ti-message-2"></i> "Yapamadım" · ${esc(c.day)}</span><p class="mt8">${esc(c.reason)}${c.text ? ' — ' + esc(c.text) : ''}</p></div>`).join('') || '<p class="hint">Henüz bildirim yok.</p>';
+      const painBadge = (c) => (c.pain != null) ? ` <span class="badge ${c.pain >= 7 ? 'danger' : c.pain >= 4 ? 'warn' : 'teal'}"><i class="ti ti-activity"></i> Ağrı ${c.pain}/10</span>` : '';
+      const couldnt = p.couldnt.length ? p.couldnt.map(c => `<div class="card" style="border-color:var(--warn)"><div class="row gap8" style="flex-wrap:wrap"><span class="badge warn"><i class="ti ti-message-2"></i> ${esc(c.reason || 'Geri bildirim')}</span>${painBadge(c)}</div>${c.text ? `<p class="mt8">${esc(c.text)}</p>` : ''}</div>`).join('') : '<p class="hint">Henüz bildirim yok.</p>';
       return `${appbar(p.name, { back: true, right: `<button class="back" data-act="patient-notif" aria-label="Bildirim ayarı"><i class="ti ti-bell"></i></button>` })}
         <section class="screen">
           <div class="row" style="margin-bottom:16px"><span class="avatar lg">${esc(p.initials)}</span>
-            <div><div style="font-weight:600;font-size:18px">${esc(p.name)}</div><div class="hint">${esc(p.condition)} · ${p.week}. hafta</div>
+            <div style="flex:1"><div style="font-weight:600;font-size:18px">${esc(p.name)}</div><div class="hint">${esc(p.condition)} · ${p.week}. hafta <button class="btn-ghost" data-act="edit-clinical" data-id="${p.id}" style="padding:2px;font-size:13px"><i class="ti ti-pencil"></i></button></div>
             <div class="mt8"><span class="badge ${adherenceColor(p.adherence)}">%${p.adherence} uyum</span> <span class="badge coral"><i class="ti ti-flame"></i> ${p.streak} gün</span></div></div></div>
 
           <h3 style="margin-bottom:8px">Son 7 gün</h3>
@@ -190,8 +191,9 @@
           <div class="row between" style="margin:18px 0 8px"><h3>Program</h3><button class="btn btn-primary sm" data-act="build" data-id="${p.id}"><i class="ti ti-plus"></i> Düzenle</button></div>
           ${p.program.length ? p.program.map(e => `<div class="card"><div class="row between"><div><div style="font-weight:600">${esc(e.name)}</div><div class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''}</div></div><i class="ti ${e.done ? 'ti-circle-check' : 'ti-circle'}" style="font-size:22px;color:${e.done ? 'var(--teal-600)' : 'var(--ink-300)'}"></i></div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}</div>`).join('') : '<p class="hint">Henüz program yok. "Düzenle" ile ekle.</p>'}
 
-          <h3 style="margin:18px 0 8px">Geri bildirim</h3>
+          <div class="row between" style="margin:18px 0 8px"><h3>Geri bildirim</h3><button class="btn btn-primary sm" data-act="reply-note" data-id="${p.id}"><i class="ti ti-message-plus"></i> Not gönder</button></div>
           ${couldnt}
+          ${p.note ? `<div class="card mt8" style="background:var(--teal-50);border-color:var(--teal-100)"><span class="caption" style="color:var(--teal-600)"><i class="ti ti-send"></i> Hastaya gönderdiğin not</span><p class="mt8" style="color:var(--teal-700)">${esc(p.note)}</p></div>` : ''}
 
           <button class="list-item card mt16" data-act="edit-appt" data-id="${p.id}" style="border-radius:var(--r-lg)"><div style="flex:1"><div class="caption">Sonraki randevu</div><div style="font-weight:600">${esc(p.nextAppt)}</div></div><i class="ti ti-calendar-event" style="font-size:24px;color:var(--teal-600)"></i></button>
         </section>`;
@@ -632,8 +634,10 @@
   }
   function couldntSheet(eid) {
     const reasons = ['Ağrı oldu', 'Çok yoruldum', 'Hareketi anlamadım', 'Zamanım olmadı'];
-    return `<h3 style="margin-bottom:4px">Zorlandın mı?</h3><p class="hint" style="margin-bottom:14px">Hekimine ilet — sorun değil.</p>
-      ${reasons.map((r, i) => `<button class="chip" data-act="reason-pick" data-reason="${esc(r)}" style="display:block;width:100%;text-align:left;margin-bottom:8px">${r}</button>`).join('')}
+    return `<h3 style="margin-bottom:4px">Nasıl geçti?</h3><p class="hint" style="margin-bottom:14px">Hekimine ilet — sorun değil.</p>
+      ${reasons.map((r) => `<button class="chip" data-act="reason-pick" data-reason="${esc(r)}" style="display:block;width:100%;text-align:left;margin-bottom:8px">${r}</button>`).join('')}
+      <div class="field" style="margin-top:10px"><label>Ağrı seviyen (0 = yok, 10 = çok)</label>
+        <div class="row gap8" style="flex-wrap:wrap" id="painRow">${Array.from({ length: 11 }, (_, n) => `<button class="chip" data-act="pain-pick" data-pain="${n}" style="min-width:38px;text-align:center">${n}</button>`).join('')}</div></div>
       <div class="field mt8"><textarea id="couldntText" placeholder="Eklemek istersen…"></textarea></div>
       <button class="btn btn-primary" data-act="send-couldnt" data-eid="${eid}"><i class="ti ti-send"></i> Hekime gönder</button>`;
   }
@@ -718,6 +722,17 @@
       <div class="field"><label for="apTime">Saat</label><input class="input" id="apTime" type="time" value="14:00"></div>
       <button class="btn btn-primary" data-act="save-appt" data-id="${p.id}"><i class="ti ti-check"></i> Kaydet</button>`;
   }
+  function noteSheet(p) {
+    return `<h3 style="margin-bottom:4px">${esc(p.name)}'e not</h3><p class="hint" style="margin-bottom:12px">Hastanın "Bugün" ekranında görünür.</p>
+      <div class="field"><textarea id="docNote" placeholder="Örn. Ağrı varsa tekrarı azalt, yarın tekrar deneyelim.">${esc(p.note || '')}</textarea></div>
+      <button class="btn btn-primary" data-act="send-note" data-id="${p.id}"><i class="ti ti-send"></i> Gönder</button>`;
+  }
+  function clinicalSheet(p) {
+    return `<h3 style="margin-bottom:12px">${esc(p.name)} — bilgiler</h3>
+      <div class="field"><label for="clCond">Durum / bölge</label><input class="input" id="clCond" value="${esc(p.condition === '—' ? '' : p.condition)}" placeholder="Örn. Sol diz — menisküs"></div>
+      <div class="field"><label for="clWeek">Tedavi haftası</label><input class="input" id="clWeek" type="number" min="1" value="${p.week}"></div>
+      <button class="btn btn-primary" data-act="save-clinical" data-id="${p.id}"><i class="ti ti-check"></i> Kaydet</button>`;
+  }
   function reminderSheet(p) {
     return `<h3 style="margin-bottom:4px">Hatırlatma</h3><p class="hint" style="margin-bottom:14px">Egzersiz hatırlatma saatlerin</p>
       <div class="row gap8" style="flex-wrap:wrap;margin-bottom:16px">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ptime" data-t="${t}">${t}</button>`).join('')}</div>
@@ -735,7 +750,7 @@
   }
 
   /* ---------- global event delegation ---------- */
-  let cfgVerify = false, reasonPick = null;
+  let cfgVerify = false, reasonPick = null, painPick = null;
   document.addEventListener('click', (e) => {
     const t = e.target.closest('[data-go],[data-act],[data-reg],[data-login],[data-nav],[data-patient],[data-exercise]');
     if (!t) return;
@@ -768,6 +783,10 @@
       st.patients.push({ id, name, initials, condition: ($('#npCond', document).value || '').trim() || 'Belirtilmedi', week: +$('#npWeek', document).value || 1, adherence: 0, streak: 0, points: 0, journeyStage: 1, history: [0, 0, 0, 0, 0, 0, 0], note: '', nextAppt: 'Planlanmadı', notif: { tone: 'normal', times: ['18:00'], escalateDays: 2, autoActions: ['notifyDoctor'] }, couldnt: [], program: [] });
       S.save(); stack = ['d_patients']; go('d_patient', { id }); return toast(name + ' eklendi');
     }
+    if (act === 'reply-note') return openSheet(noteSheet(S.patient(d.id)));
+    if (act === 'send-note') { const p = S.patient(d.id); p.note = ($('#docNote', document).value || '').trim(); if (S.isCloud()) window.FZ_API.setPatient(p.id, { note: p.note }).catch(() => {}); S.save(); closeSheet(); render(); return toast('Not gönderildi'); }
+    if (act === 'edit-clinical') return openSheet(clinicalSheet(S.patient(d.id)));
+    if (act === 'save-clinical') { const p = S.patient(d.id); p.condition = ($('#clCond', document).value || '').trim() || '—'; p.week = +$('#clWeek', document).value || 1; if (S.isCloud()) window.FZ_API.setPatient(p.id, { condition: p.condition === '—' ? null : p.condition, week: p.week }).catch(() => {}); S.save(); closeSheet(); render(); return toast('Güncellendi'); }
     if (act === 'edit-appt') return openSheet(apptSheet(S.patient(d.id)));
     if (act === 'save-appt') {
       const dv = $('#apDate', document).value, tv = $('#apTime', document).value || '14:00';
@@ -863,12 +882,13 @@
     if (act === 'sim-verify') { const p = st.patients[0]; return verifySuccess(p.program.find(x => x.id === d.eid) || p.program[0]); }
 
     /* couldn't-do */
-    if (act === 'couldnt') { reasonPick = null; return openSheet(couldntSheet(d.eid)); }
+    if (act === 'couldnt') { reasonPick = null; painPick = null; return openSheet(couldntSheet(d.eid)); }
     if (act === 'reason-pick') { reasonPick = d.reason; $$('[data-act="reason-pick"]', document).forEach(x => x.classList.toggle('on', x === t)); return; }
+    if (act === 'pain-pick') { painPick = +d.pain; $$('[data-act="pain-pick"]', document).forEach(x => x.classList.toggle('on', x === t)); return; }
     if (act === 'send-couldnt') {
       const p = st.patients[0]; const txt = ($('#couldntText', document) || {}).value || '';
-      p.couldnt.unshift({ day: 'Bugün', reason: reasonPick || 'Belirtilmedi', text: txt.trim() });
-      if (S.isCloud()) window.FZ_API.sendFeedback({ patient_id: p.id, exercise_id: d.eid || null, reason: reasonPick || 'Belirtilmedi', note: txt.trim() }).catch(() => {});
+      p.couldnt.unshift({ day: 'Bugün', reason: reasonPick || 'Belirtilmedi', text: txt.trim(), pain: painPick });
+      if (S.isCloud()) window.FZ_API.sendFeedback({ patient_id: p.id, exercise_id: d.eid || null, reason: reasonPick || 'Belirtilmedi', note: txt.trim(), pain: painPick }).catch(() => {});
       S.save(); closeSheet(); toast('Hekimine iletildi'); if (session) return sessionAdvance(); return back();
     }
   });
@@ -936,8 +956,8 @@
 
   async function buildPatient(p) {
     const api = window.FZ_API;
-    const [program, notif, gam, comps, appts] = await Promise.all([
-      api.program(p.id), api.getNotif(p.id), api.getGamification(p.id), api.completionsFor(p.id), api.appointmentsFor(p.id)
+    const [program, notif, gam, comps, appts, fb] = await Promise.all([
+      api.program(p.id), api.getNotif(p.id), api.getGamification(p.id), api.completionsFor(p.id), api.appointmentsFor(p.id), api.feedbackFor(p.id)
     ]);
     const doneSet = new Set((comps || []).map(c => c.exercise_id));
     let nextAppt = 'Planlanmadı';
@@ -945,9 +965,9 @@
     return {
       id: p.id, name: p.full_name || 'İsimsiz', initials: initialsOf(p.full_name), condition: p.condition || '—', week: p.week || 1,
       adherence: 0, streak: gam ? gam.streak : 0, points: gam ? gam.points : 0, journeyStage: gam ? gam.journey_stage : 1,
-      history: [0, 0, 0, 0, 0, 0, 0], note: '', nextAppt,
+      history: [0, 0, 0, 0, 0, 0, 0], note: p.note || '', nextAppt,
       notif: notif ? { tone: notif.tone || 'normal', times: notif.times || ['18:00'], escalateDays: notif.inactive_days || 2, autoActions: notif.auto_actions || ['notifyDoctor'] } : { tone: 'normal', times: ['18:00'], escalateDays: 2, autoActions: ['notifyDoctor'] },
-      couldnt: [],
+      couldnt: (fb || []).map(f => ({ day: '', reason: f.reason || '', text: f.note || '', pain: f.pain })),
       program: (program || []).map(e => ({ ...mapEx(e), done: doneSet.has(e.id) }))
     };
   }
@@ -970,7 +990,6 @@
       const doc = await api.myDoctor();
       base.doctor = doc ? { id: profile.doctor_id, name: doc.full_name || 'Fizyoterapist', license: doc.license_no || '' } : { id: '', name: 'Fizyoterapist atanmadı', license: '' };
       const self = await buildPatient(profile);
-      self.couldnt = (await api.feedbackFor(profile.id)).map(f => ({ day: '', reason: f.reason || '', text: f.note || '' }));
       base.patients = [self];
       const g = await api.getGamification(profile.id); if (g) base.settings.gamify = g.gamify_enabled;
     }

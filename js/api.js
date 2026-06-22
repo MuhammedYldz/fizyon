@@ -41,7 +41,8 @@
     async setGamification(patientId, patch) { const c = await client(); return c.from('gamification').update(patch).eq('patient_id', patientId); },
     async completionsFor(patientId) { const c = await client(); const { data } = await c.from('completions').select('exercise_id,verified,done_at').eq('patient_id', patientId); return data || []; },
     async appointmentsFor(patientId) { const c = await client(); const { data } = await c.from('appointments').select('at').eq('patient_id', patientId).order('at', { ascending: false }).limit(1); return data || []; },
-    async feedbackFor(patientId) { const c = await client(); const { data } = await c.from('feedback').select('reason,note,created_at').eq('patient_id', patientId).order('created_at', { ascending: false }).limit(10); return data || []; },
+    async feedbackFor(patientId) { const c = await client(); const { data } = await c.from('feedback').select('reason,note,pain,created_at').eq('patient_id', patientId).order('created_at', { ascending: false }).limit(10); return data || []; },
+    async setPatient(patientId, patch) { const c = await client(); return c.from('profiles').update(patch).eq('id', patientId); },
     async audit(action, target) { const c = await client(); const id = await uid(); if (!id) return; return c.from('audit_log').insert({ actor_id: id, action, target }); }
   };
 })();

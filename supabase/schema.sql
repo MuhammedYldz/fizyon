@@ -15,6 +15,7 @@ create table if not exists public.profiles (
   consent_health boolean not null default false, -- KVKK explicit consent (açık rıza)
   consent_at    timestamptz,
   code          text unique,                   -- physiotherapist's share code (patients link with it)
+  note          text,                          -- doctor's current message/instruction to the patient
   created_at    timestamptz not null default now()
 );
 
@@ -47,6 +48,7 @@ create table if not exists public.feedback (
   exercise_id uuid references public.exercises(id) on delete set null,
   reason      text,
   note        text,
+  pain        int,             -- 0-10 pain reported with this feedback
   created_at  timestamptz not null default now()
 );
 

@@ -1,0 +1,21 @@
+{
+  "packageId": "com.fizyon.app",
+  "host": "YOUR-DOMAIN",
+  "name": "Fizyon",
+  "launcherName": "Fizyon",
+  "display": "standalone",
+  "themeColor": "#0E7C66",
+  "navigationColor": "#0E7C66",
+  "backgroundColor": "#F6F8F7",
+  "startUrl": "/index.html",
+  "iconUrl": "https://YOUR-DOMAIN/assets/logo.svg",
+  "maskableIconUrl": "https://YOUR-DOMAIN/assets/logo.svg",
+  "appVersionName": "1.0.0",
+  "appVersion": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "fallbackType": "customtabs",
+  "enableNotifications": true,
+  "features": {},
+  "_comment": "Run `bubblewrap init --manifest https://YOUR-DOMAIN/manifest.webmanifest`. Edit host/packageId, then `bubblewrap build`. See GOOGLE_PLAY.md."
+}

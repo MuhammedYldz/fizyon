@@ -29,11 +29,22 @@ Each feature is built, then **tested with Playwright**, before the next. Status:
 - ☑ "Couldn't do because…" feedback (sheet) — built
 - ☑ Gamification (opt-in): points, streak, goal, journey stages, reward badges — TESTED
 
+## Backend, legal & Play (2026-06-22)
+- ☑ Supabase schema + Row-Level Security on all tables (applied + verified)
+- ☑ Auto-provision triggers (profile on signup; notif/gamification on patient) — verified
+- ☑ Real auth: email signup/login wired + tested against live DB (profile row created)
+- ☑ KVKK consent gate (açık rıza) in onboarding; consent persisted server-side — TESTED
+- ☑ Privacy Policy + Terms (KVKK/GDPR-aligned, lawyer-review flagged) hosted in-app
+- ☑ Cloud data API layer (js/api.js) ready for per-screen migration
+- ☑ Google Play readiness: GOOGLE_PLAY.md, TWA scaffold (twa-manifest, assetlinks), SECURITY.md
+- ☐ Migrate each screen's reads/writes from local demo state to js/api.js (cloud)
+- ☐ Phone OTP (needs SMS provider), custom domain for TWA, EU data residency, lawyer/VERBİS
+
 ## Cross-cutting
 - ☐ 3-tap navigation audit
 - ☐ Accessibility pass (contrast, tap targets, reduced-motion)
-- ☐ PWA install (manifest + service worker) — "downloadable"
-- ☐ Security notes honored in demo (local-only, role isolation)
+- ☑ PWA install (manifest + service worker) — "downloadable"
+- ☑ Security: RLS role isolation enforced at DB; on-device camera; audit log
 
 ## Test log
 - 2026-06-21 (Playwright, 430×880): welcome, login (both roles), doctor patient list,

@@ -88,9 +88,12 @@
           : `<div class="field"><label for="re">E-posta</label><input class="input" id="re" inputmode="email" autocomplete="email" placeholder="ornek@eposta.com"></div>
              <div class="field"><label for="rpw">Parola</label><input class="input" id="rpw" type="password" autocomplete="new-password" placeholder="En az 8 karakter"></div>`}
         <div id="docLic" class="field" hidden><label for="rl">Fizyoterapist lisans no</label><input class="input" id="rl" placeholder="TR-FT-XXXXX"><p class="hint mt8">Profesyonel hesaplar doğrulanır.</p></div>
+        <label class="row gap8" style="align-items:flex-start;cursor:pointer;margin:6px 0 14px">
+          <input type="checkbox" id="consentHealth" style="width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:var(--teal-600)">
+          <span style="font-size:13px;color:var(--ink-700)">Sağlık verilerimin tedavi takibi amacıyla işlenmesine <b>açık rıza</b> veriyorum ve <a href="privacy.html" target="_blank" style="color:var(--teal-600)">Gizlilik Politikası</a> ile <a href="terms.html" target="_blank" style="color:var(--teal-600)">Kullanım Koşulları</a>'nı okudum.</span>
+        </label>
         <div class="err-msg" id="regErr" hidden></div>
         <button class="btn btn-primary mt8" data-act="register">Devam et</button>
-        <p class="hint center mt16">Devam ederek <a href="#" style="color:var(--teal-600)">koşulları</a> ve <a href="#" style="color:var(--teal-600)">gizlilik</a> politikasını kabul edersin.</p>
       </section>`;
     },
 
@@ -109,6 +112,17 @@
           </button>
         </div>
       </section>`;
+    },
+
+    reg_done() {
+      return `${appbar('E-postanı doğrula', { back: true })}
+        <section class="screen center" style="padding-top:36px">
+          <div style="width:64px;height:64px;border-radius:50%;background:var(--teal-50);color:var(--teal-600);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><i class="ti ti-mail-check" style="font-size:32px"></i></div>
+          <h2>Son bir adım</h2>
+          <p class="muted mt8"><b>${esc(params.email || '')}</b> adresine bir doğrulama bağlantısı gönderdik. Bağlantıya tıkladıktan sonra giriş yapabilirsin.</p>
+          <button class="btn btn-primary mt24" data-go="login" style="max-width:240px;margin:24px auto 0">Giriş yap</button>
+          <button class="btn-ghost mt16" data-go="welcome" style="display:block;margin:16px auto 0">Başa dön</button>
+        </section>`;
     },
 
     /* Doctor */
@@ -724,7 +738,7 @@
     }
   });
 
-  function doRegister() {
+  async function doRegister() {
     const phone = params.type === 'phone';
     const err = $('#regErr');
     const name = $('#rn').value.trim();
@@ -734,9 +748,31 @@
     else { const em = $('#re').value.trim(); const pw = $('#rpw').value; if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) msg = 'Geçerli bir e-posta gir.'; else if (pw.length < 8) msg = 'Parola en az 8 karakter olmalı.'; }
     const role = ($('[data-role-pick].on') || {}).dataset?.rolePick || 'patient';
     if (!msg && role === 'doctor' && !$('#rl').value.trim()) msg = 'Lisans numaranı gir.';
+    if (!msg && !$('#consentHealth').checked) msg = 'Devam etmek için sağlık verisi açık rızası gerekli.';
     if (msg) { err.hidden = false; err.innerHTML = `<i class="ti ti-alert-circle"></i> ${esc(msg)}`; return; }
-    const st = S.get(); st.session = { role, id: role === 'doctor' ? 'd1' : 'p1' }; S.save();
-    toast(phone ? 'Doğrulama kodu gönderildi (demo)' : 'Hesap oluşturuldu'); home();
+    err.hidden = true;
+
+    // Phone OTP needs an SMS provider (Twilio/Netgsm) configured in Supabase — not yet wired.
+    if (phone) { err.hidden = false; err.innerHTML = '<i class="ti ti-info-circle"></i> Telefonla kayıt için SMS sağlayıcısı gerekiyor (yakında). Şimdilik e-posta ile kayıt ol.'; return; }
+
+    const btn = $('[data-act="register"]'); if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Hesap oluşturuluyor…'; }
+    try {
+      const { data, error } = await window.FZ_API.signUp({ email: $('#re').value.trim(), password: $('#rpw').value, fullName: name, role, license: role === 'doctor' ? $('#rl').value.trim() : null });
+      if (error) throw error;
+      if (data.session) {
+        await window.FZ_API.setConsent();
+        const st = S.get(); st.session = { role, id: role === 'doctor' ? 'd1' : 'p1', cloud: true }; S.save();
+        toast('Hesabın oluşturuldu (bulut)'); home();
+      } else {
+        // email confirmation required (secure default)
+        replace('reg_done', { email: $('#re').value.trim() });
+      }
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Devam et'; }
+      err.hidden = false;
+      const m = (e && e.message || '').toLowerCase();
+      err.innerHTML = `<i class="ti ti-alert-circle"></i> ${esc(m.includes('already') ? 'Bu e-posta zaten kayıtlı.' : m.includes('fetch') || m.includes('network') ? 'Bağlantı yok. Demo modunu deneyebilirsin.' : 'Kayıt başarısız: ' + (e.message || 'bilinmeyen hata'))}`;
+    }
   }
 
   /* boot */

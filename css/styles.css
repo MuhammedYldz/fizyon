@@ -118,14 +118,28 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 .bar{height:8px;border-radius:var(--r-pill);background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--teal-500);border-radius:inherit}
 
-/* Bottom nav — pill-highlight active state */
-.tabbar{position:sticky;bottom:0;max-width:var(--maxw);margin:0 auto;display:flex;background:var(--surface);border-top:1px solid var(--line);padding:7px 8px max(7px,env(safe-area-inset-bottom));z-index:30}
-.tabbar button{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--ink-500);cursor:pointer;padding:0}
-.tabbar button .ic{display:flex;align-items:center;justify-content:center;width:58px;height:30px;border-radius:var(--r-pill);transition:background .18s,color .18s}
-.tabbar button .ic i{font-size:21px}
-.tabbar button.on{color:var(--teal-600)}
-.tabbar button.on .ic{background:var(--teal-50)}
-.tabbar button:active .ic{transform:scale(.94)}
+/* Bottom nav — floating bar, active tab expands into a labelled pill */
+.tabbar{position:sticky;bottom:0;max-width:var(--maxw);margin:0 auto;padding:8px 14px max(10px,env(safe-area-inset-bottom));z-index:30;background:linear-gradient(to top,var(--bg) 60%,transparent)}
+.tabwrap{display:flex;align-items:center;justify-content:space-between;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);padding:6px;box-shadow:0 6px 22px rgba(15,26,23,.12)}
+.tabwrap button{display:flex;align-items:center;gap:8px;border:none;background:transparent;color:var(--ink-500);padding:11px;border-radius:var(--r-pill);cursor:pointer;font-size:14px;font-weight:600;transition:background .2s,color .2s,padding .2s}
+.tabwrap button i{font-size:22px}
+.tabwrap button .lbl{display:none;white-space:nowrap}
+.tabwrap button.on{background:var(--teal-600);color:#fff;padding:11px 18px}
+.tabwrap button.on .lbl{display:inline}
+.tabwrap button:active{transform:scale(.95)}
+
+/* Achievement / share card */
+.ach-card{background:var(--teal-600);color:#fff;border-radius:var(--r-xl,16px);padding:26px 22px;text-align:center;position:relative;overflow:hidden}
+.ach-card .ach-logo{width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px}
+.ach-card h2{color:#fff;font-size:24px;margin-bottom:4px}
+.ach-card .ach-name{font-size:18px;font-weight:600;margin-top:2px}
+.ach-card .ach-line{color:rgba(255,255,255,.85);font-size:15px;margin:10px 0 18px}
+.ach-stats{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
+.ach-stat{background:rgba(255,255,255,.14);border-radius:var(--r-md);padding:12px 16px;min-width:92px}
+.ach-stat .v{font-size:26px;font-weight:700;line-height:1}
+.ach-stat .l{font-size:12px;color:rgba(255,255,255,.8);margin-top:4px}
+.ach-by{font-size:13px;color:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;gap:6px}
+.ach-mark{position:absolute;right:-20px;bottom:-20px;font-size:120px;color:rgba(255,255,255,.08)}
 
 /* Toast */
 .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink-900);color:#fff;padding:12px 18px;border-radius:var(--r-pill);font-size:14px;font-weight:500;box-shadow:var(--shadow-lg);z-index:60;animation:enter .2s}

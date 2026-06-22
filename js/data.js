@@ -5,7 +5,7 @@ window.FZ = (function () {
 
   const seed = {
     session: null, // {role:'doctor'|'patient', id}
-    settings: { gamify: true, notif: { push: true, sms: false, email: false, quietFrom: '22:00', quietTo: '07:00' } },
+    settings: { gamify: true, notif: { push: true, sms: false, email: false, quietFrom: '22:00', quietTo: '07:00', inactiveDays: 2, autoActions: ['notifyDoctor', 'remindPatient'] } },
     doctor: { id: 'd1', name: 'Fzt. Elif Aydın', license: 'TR-FT-20431' },
     patients: [
       { id: 'p1', name: 'Ayşe Kaya', initials: 'AK', condition: 'Sol diz — menisküs', week: 3, adherence: 82,
@@ -13,7 +13,7 @@ window.FZ = (function () {
         history: [60, 80, 100, 40, 90, 100, 82],
         note: 'Bugün dengeye ağırlık ver. Acele etme 🙂',
         nextAppt: '28 Haziran, 14:00',
-        notif: { tone: 'normal', times: ['18:00'], escalateDays: 2 },
+        notif: { tone: 'normal', times: ['18:00'], escalateDays: 2, autoActions: ['notifyDoctor', 'remindPatient'] },
         couldnt: [{ day: 'Perşembe', reason: 'Ağrı oldu', text: 'Diz arkasında keskin ağrı, 2. sette bıraktım.' }],
         program: [
           { id: 'e1', name: 'Düz bacak kaldırma', demo: 'legraise', reps: 12, sets: 3, hold: 0, done: true,
@@ -26,12 +26,12 @@ window.FZ = (function () {
       { id: 'p2', name: 'Mert Demir', initials: 'MD', condition: 'Sağ omuz — sıkışma', week: 1, adherence: 41,
         streak: 1, points: 120, journeyStage: 1, history: [40, 0, 60, 50, 40, 0, 41],
         note: 'Ağrısız aralıkta çalış.', nextAppt: '26 Haziran, 11:00',
-        notif: { tone: 'gentle', times: ['10:00', '19:00'], escalateDays: 1 },
+        notif: { tone: 'gentle', times: ['10:00', '19:00'], escalateDays: 1, autoActions: ['remindPatient'] },
         couldnt: [], program: [] },
       { id: 'p3', name: 'Selin Yıldız', initials: 'SY', condition: 'Bel — disk', week: 5, adherence: 23,
         streak: 0, points: 60, journeyStage: 1, history: [20, 0, 0, 40, 0, 30, 23],
         note: 'Lütfen günde bir kez deneyelim.', nextAppt: '1 Temmuz, 09:30',
-        notif: { tone: 'strict', times: ['08:00', '13:00', '20:00'], escalateDays: 1 },
+        notif: { tone: 'strict', times: ['08:00', '13:00', '20:00'], escalateDays: 1, autoActions: ['notifyDoctor', 'remindPatient', 'callPatient'] },
         couldnt: [{ day: 'Pazartesi', reason: 'Zamanım olmadı', text: '' }], program: [] }
     ],
     presets: [
@@ -61,9 +61,11 @@ window.FZ = (function () {
       if (!s) return structuredClone(seed);
       s.settings = s.settings || {};
       if (!s.settings.notif) s.settings.notif = structuredClone(seed.settings.notif);
+      if (s.settings.notif.inactiveDays === undefined) { s.settings.notif.inactiveDays = 2; s.settings.notif.autoActions = ['notifyDoctor', 'remindPatient']; }
       if (s.settings.gamify === undefined) s.settings.gamify = true;
       if (!s.presets) s.presets = structuredClone(seed.presets);
       if (!s.cats) s.cats = structuredClone(seed.cats);
+      (s.patients || []).forEach(p => { if (p.notif && !p.notif.autoActions) p.notif.autoActions = ['notifyDoctor']; });
       return s;
     } catch { return structuredClone(seed); }
   }

@@ -33,8 +33,8 @@
     const tabs = role === 'doctor'
       ? [['d_patients', 'ti-users', 'Hastalar'], ['d_analytics', 'ti-chart-line', 'Analiz'], ['d_notifs', 'ti-bell', 'Bildirim'], ['d_profile', 'ti-user', 'Profil']]
       : [['p_today', 'ti-checkbox', 'Bugün'], ['p_journey', 'ti-map-2', 'Yolculuk'], ['p_profile', 'ti-user', 'Profil']];
-    return `<nav class="tabbar">${tabs.map(([r, i, l]) =>
-      `<button data-nav="${r}" class="${active === r ? 'on' : ''}" aria-label="${l}"><span class="ic"><i class="ti ${i}"></i></span>${l}</button>`).join('')}</nav>`;
+    return `<nav class="tabbar"><div class="tabwrap">${tabs.map(([r, i, l]) =>
+      `<button data-nav="${r}" class="${active === r ? 'on' : ''}" aria-label="${l}"><i class="ti ${i}"></i><span class="lbl">${l}</span></button>`).join('')}</div></nav>`;
   }
 
   /* ---------- screens ---------- */
@@ -199,6 +199,13 @@
             <div class="divider"></div>
             <div class="row between"><span class="muted">Sessiz saatler</span><span style="font-weight:600">${n.quietFrom} – ${n.quietTo}</span></div>
           </div>
+          <h3 style="margin:18px 0 8px"><i class="ti ti-robot" style="vertical-align:-2px"></i> Otomatik takip (varsayılan)</h3>
+          <div class="card">
+            <p class="muted" style="margin-bottom:10px">Hasta kaç gün egzersiz yapmazsa harekete geç:</p>
+            <div class="row gap8" style="margin-bottom:12px">${[1, 2, 3].map(dn => `<button class="chip ${n.inactiveDays === dn ? 'on' : ''}" data-act="gesc" data-d="${dn}">${dn} gün</button>`).join('')}</div>
+            <p class="muted" style="margin-bottom:10px">Ne yapılsın:</p>
+            <div class="row gap8" style="flex-wrap:wrap">${ACTIONS.map(([a, l, ic]) => `<button class="chip ${n.autoActions.includes(a) ? 'on' : ''}" data-act="gnact" data-a="${a}"><i class="ti ${ic}"></i> ${l}</button>`).join('')}</div>
+          </div>
           <h3 style="margin:18px 0 8px">Hastaya özel</h3>
           <p class="hint" style="margin-bottom:8px">Her hasta için tonu ve hatırlatmayı ayarla.</p>
           <div class="card flush">${st.patients.map(p => `<button class="list-item" data-act="patient-notif" data-id="${p.id}"><span class="avatar">${esc(p.initials)}</span><span style="flex:1"><span style="font-weight:600">${esc(p.name)}</span><br><span class="hint">${toneLabel(p.notif.tone)} · ${p.notif.times.join(', ')}</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>`).join('')}</div>
@@ -218,8 +225,13 @@
           ${e.verify ? '<span class="badge teal"><i class="ti ti-shield-check"></i></span>' : ''}
           <i class="ti ti-player-play" style="font-size:20px;color:var(--teal-600)"></i>
         </button>`).join('');
+      const docInit = st.doctor.name.replace('Fzt.', '').trim().split(' ').map(w => w[0]).join('').slice(0, 2);
       return `<div class="appbar"><div class="brand"><img src="assets/logo.svg" alt="">Fizyon</div><div class="spacer"></div>${st.settings.gamify ? `<span class="badge coral"><i class="ti ti-flame"></i> ${p.streak}</span>` : ''}</div>
         <section class="screen">
+          <div class="card row between" style="margin-bottom:16px">
+            <div class="row"><span class="avatar" style="background:var(--teal-600);color:#fff">${esc(docInit)}</span><div><div class="caption">Fizyoterapistin</div><div style="font-weight:600;font-size:17px">${esc(st.doctor.name)}</div></div></div>
+            <button class="btn-ghost" data-act="msg-doctor" aria-label="Mesaj gönder"><i class="ti ti-message-2" style="font-size:24px"></i></button>
+          </div>
           <h1>Bugün</h1>
           <p class="muted" style="margin-bottom:14px">Salı · ${p.program.length} hareket · ~10 dk · ${done}/${p.program.length} tamam</p>
           <div class="bar" style="margin-bottom:16px"><i style="width:${p.program.length ? done / p.program.length * 100 : 0}%"></i></div>
@@ -285,6 +297,7 @@
             <div class="row between"><div><div class="caption" style="color:var(--coral-600)">Puanın</div><div style="font-size:28px;font-weight:600;color:var(--coral-600)">${p.points}</div></div>
             <div class="row gap16"><div class="center"><div style="font-size:22px;font-weight:600"><i class="ti ti-flame" style="color:var(--coral-500)"></i> ${p.streak}</div><div class="hint">gün seri</div></div></div></div>
           </div>
+          <button class="btn btn-accent mt16" data-go="p_achievement"><i class="ti ti-award"></i> Başarı kartını gör & paylaş</button>
           <h3 style="margin:18px 0 8px">Haftalık hedef</h3>
           <div class="card"><div class="row between" style="margin-bottom:8px"><span class="muted">Bu haftaki egzersizler</span><span style="font-weight:600">%${goalPct}</span></div><div class="bar"><i style="width:${goalPct}%"></i></div>${goalPct >= 100 ? '<div class="badge coral mt8"><i class="ti ti-gift"></i> Hedef tamam — ödül açıldı!</div>' : ''}</div>
           <h3 style="margin:18px 0 8px">İyileşme yolun · diz</h3>
@@ -293,6 +306,29 @@
           <div class="grid2">${st.badges.map(b => `<div class="reward ${b.got ? '' : 'locked'}"><span class="rc"><i class="ti ${b.icon}"></i></span><span style="font-size:13px;font-weight:500">${esc(b.name)}</span></div>`).join('')}</div>
         </section>
         ${tabbar('p_journey', 'patient')}`;
+    },
+
+    p_achievement() {
+      const st = S.get(); const p = st.patients[0];
+      const days = p.week * 7, moves = p.week * 12, first = p.name.split(' ')[0];
+      return `${appbar('Başarı kartın', { back: true })}
+        <section class="screen">
+          <div class="ach-card" id="achCard">
+            <div class="ach-mark"><i class="ti ti-trophy"></i></div>
+            <div class="ach-logo"><i class="ti ti-activity-heartbeat"></i></div>
+            <h2>Harika gidiyorum! 💪</h2>
+            <div class="ach-name">${esc(first)}</div>
+            <div class="ach-line">Fizyon ile ev egzersiz programıma sadık kaldım.</div>
+            <div class="ach-stats">
+              <div class="ach-stat"><div class="v">${moves}</div><div class="l">toplam hareket</div></div>
+              <div class="ach-stat"><div class="v">${days}</div><div class="l">gün</div></div>
+            </div>
+            <div class="ach-by"><i class="ti ti-stethoscope"></i> ${esc(st.doctor.name)} eşliğinde</div>
+          </div>
+          <button class="btn btn-accent mt16" data-act="share-card"><i class="ti ti-share"></i> Paylaş</button>
+          <button class="btn btn-secondary mt8" data-act="download-card"><i class="ti ti-download"></i> Görseli indir</button>
+          <p class="hint center mt16">Kartta hastalık adı yok — istediğin yerde paylaşabilirsin.</p>
+        </section>`;
     },
 
     p_profile() { return profile('patient'); },
@@ -492,14 +528,58 @@
 
   const toneLabel = (t) => ({ gentle: 'Nazik', normal: 'Normal', strict: 'Sıkı' }[t] || 'Normal');
   const TIMES = ['08:00', '10:00', '13:00', '18:00', '20:00'];
+  const ACTIONS = [['notifyDoctor', 'Bana bildir', 'ti-bell'], ['remindPatient', 'Hastaya hatırlat', 'ti-message-dots'], ['callPatient', 'Hastayı ara', 'ti-phone'], ['messagePatient', 'Mesaj gönder', 'ti-send']];
+  const actLabel = (a) => (ACTIONS.find(x => x[0] === a) || [, a])[1];
+  function autoSummary(name, days, acts) {
+    if (!acts || !acts.length) return `${name} ${days} gün egzersiz yapmazsa bir şey yapılmaz.`;
+    return `${name} <b>${days} gün</b> egzersiz yapmazsa: ${acts.map(a => actLabel(a).toLocaleLowerCase('tr')).join(', ')}.`;
+  }
   function notifSheet(p) {
     const tones = [['gentle', 'Nazik'], ['normal', 'Normal'], ['strict', 'Sıkı']];
     return `<h3 style="margin-bottom:4px">${esc(p.name)}</h3><p class="hint" style="margin-bottom:14px">Bu hastaya özel bildirim</p>
       <div class="field"><label>Ton</label><div class="row gap8">${tones.map(([v, l]) => `<button class="chip ${p.notif.tone === v ? 'on' : ''}" data-act="ntone" data-id="${p.id}" data-v="${v}">${l}</button>`).join('')}</div></div>
       <div class="field"><label>Hatırlatma saatleri</label><div class="row gap8" style="flex-wrap:wrap">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ntime" data-id="${p.id}" data-t="${t}">${t}</button>`).join('')}</div></div>
-      <div class="field"><label>Kaçırırsa beni uyar</label><div class="row gap8">${[1, 2, 3].map(dn => `<button class="chip ${p.notif.escalateDays === dn ? 'on' : ''}" data-act="nesc" data-id="${p.id}" data-d="${dn}">${dn} gün sonra</button>`).join('')}</div></div>
+      <div class="divider"></div>
+      <div class="field"><label><i class="ti ti-robot" style="vertical-align:-2px"></i> Otomatik takip — kaç gün egzersiz yapmazsa</label><div class="row gap8">${[1, 2, 3].map(dn => `<button class="chip ${p.notif.escalateDays === dn ? 'on' : ''}" data-act="nesc" data-id="${p.id}" data-d="${dn}">${dn} gün</button>`).join('')}</div></div>
+      <div class="field"><label>Otomatik aksiyon</label><div class="row gap8" style="flex-wrap:wrap">${ACTIONS.map(([a, l, ic]) => `<button class="chip ${p.notif.autoActions.includes(a) ? 'on' : ''}" data-act="nact" data-id="${p.id}" data-a="${a}"><i class="ti ${ic}"></i> ${l}</button>`).join('')}</div></div>
+      <div class="card" style="background:var(--teal-50);border-color:var(--teal-100);margin-bottom:14px"><p style="color:var(--teal-700);font-size:14px;margin:0">${autoSummary(p.name.split(' ')[0], p.notif.escalateDays, p.notif.autoActions)}</p></div>
       <button class="btn btn-primary" data-act="close-sheet"><i class="ti ti-check"></i> Tamam</button>`;
   }
+  function drawCardCanvas() {
+    const st = S.get(); const p = st.patients[0];
+    const days = p.week * 7, moves = p.week * 12, first = p.name.split(' ')[0];
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1080;
+    const x = c.getContext('2d');
+    x.fillStyle = '#0E7C66'; x.fillRect(0, 0, 1080, 1080);
+    x.fillStyle = 'rgba(255,255,255,0.06)'; x.beginPath(); x.arc(900, 980, 300, 0, 7); x.fill();
+    x.textAlign = 'center';
+    // logo badge
+    x.fillStyle = 'rgba(255,255,255,0.16)'; x.beginPath(); x.roundRect(470, 130, 140, 140, 34); x.fill();
+    x.strokeStyle = '#fff'; x.lineWidth = 14; x.lineCap = 'round'; x.beginPath(); x.moveTo(508, 202); x.lineTo(534, 230); x.lineTo(576, 172); x.stroke();
+    // text
+    x.fillStyle = '#fff'; x.font = '700 80px sans-serif'; x.fillText('Harika gidiyorum!', 540, 400);
+    x.font = '600 60px sans-serif'; x.fillText(first, 540, 486);
+    x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = '400 38px sans-serif'; x.fillText('Fizyon ile programıma sadık kaldım', 540, 560);
+    // stat pills
+    const pill = (px, val, lbl) => { x.fillStyle = 'rgba(255,255,255,0.14)'; x.beginPath(); x.roundRect(px, 620, 320, 180, 28); x.fill(); x.fillStyle = '#fff'; x.font = '700 88px sans-serif'; x.fillText(val, px + 160, 720); x.fillStyle = 'rgba(255,255,255,0.8)'; x.font = '400 34px sans-serif'; x.fillText(lbl, px + 160, 768); };
+    pill(190, String(moves), 'toplam hareket'); pill(570, String(days), 'gün');
+    x.fillStyle = 'rgba(255,255,255,0.92)'; x.font = '400 40px sans-serif'; x.fillText(st.doctor.name + ' eşliğinde', 540, 910);
+    x.fillStyle = '#fff'; x.font = '700 52px sans-serif'; x.fillText('Fizyon', 540, 1000);
+    return c;
+  }
+  function shareCard(forceDownload) {
+    const canvas = drawCardCanvas();
+    canvas.toBlob((blob) => {
+      const file = new File([blob], 'fizyon-basari.png', { type: 'image/png' });
+      if (!forceDownload && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'Fizyon', text: 'Ev egzersiz programıma sadık kaldım! 💪 #Fizyon' }).catch(() => {});
+      } else {
+        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'fizyon-basari.png'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        if (!forceDownload) toast('Görsel indirildi');
+      }
+    }, 'image/png');
+  }
+
   function reminderSheet(p) {
     return `<h3 style="margin-bottom:4px">Hatırlatma</h3><p class="hint" style="margin-bottom:14px">Egzersiz hatırlatma saatlerin</p>
       <div class="row gap8" style="flex-wrap:wrap;margin-bottom:16px">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ptime" data-t="${t}">${t}</button>`).join('')}</div>
@@ -546,6 +626,12 @@
     if (act === 'ntone') { const p = S.patient(d.id); p.notif.tone = d.v; S.save(); return openSheet(notifSheet(p)); }
     if (act === 'ntime') { const p = S.patient(d.id); const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } S.save(); return openSheet(notifSheet(p)); }
     if (act === 'nesc') { const p = S.patient(d.id); p.notif.escalateDays = +d.d; S.save(); return openSheet(notifSheet(p)); }
+    if (act === 'nact') { const p = S.patient(d.id); const i = p.notif.autoActions.indexOf(d.a); if (i >= 0) p.notif.autoActions.splice(i, 1); else p.notif.autoActions.push(d.a); S.save(); return openSheet(notifSheet(p)); }
+    if (act === 'gesc') { st.settings.notif.inactiveDays = +d.d; S.save(); return render(); }
+    if (act === 'gnact') { const arr = st.settings.notif.autoActions; const i = arr.indexOf(d.a); if (i >= 0) arr.splice(i, 1); else arr.push(d.a); S.save(); return render(); }
+    if (act === 'msg-doctor') return toast('Mesajlaşma yakında — şimdilik fizyoterapistin bildirim alır');
+    if (act === 'share-card') return shareCard(false);
+    if (act === 'download-card') return shareCard(true);
     if (act === 'reminder') return openSheet(reminderSheet(st.patients[0]));
     if (act === 'ptime') { const p = st.patients[0]; const i = p.notif.times.indexOf(d.t); if (i >= 0) p.notif.times.splice(i, 1); else { p.notif.times.push(d.t); p.notif.times.sort(); } S.save(); return openSheet(reminderSheet(p)); }
     if (act === 'close-sheet') { closeSheet(); return render(); }

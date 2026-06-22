@@ -12,8 +12,15 @@ Each feature is built, then **tested with Playwright**, before the next. Status:
 - ☑ Patient detail + adherence chart — TESTED
 - ☑ Program builder + preset library + config sheet (reps/time/note/verify, autosave) — TESTED
 - ☑ Progress + analytics charts (patient-detail + Analiz tab: comparison + trend) — TESTED
-- ☑ Notifications: general (channels + quiet hours) + patient-specific (tone, times, escalation) — TESTED
+- ☑ Notifications: general + patient-specific + **automatic follow-up rules** (inactive-days trigger + actions: notify/remind/call/message) — TESTED
 - ☐ Appointments (basic view exists; editing pending)
+- ☐ New-patient flow
+- ☐ Doctor video recording (record-own)
+
+## New (requested 2026-06-22)
+- ☑ Bottom nav redesigned entirely (floating pill, active tab labelled) — TESTED
+- ☑ Patient: physiotherapist name prominent on home — TESTED
+- ☑ Shareable achievement card (generic, no condition; physio name + total moves + days; canvas PNG export + Web Share) — TESTED
 
 ## Patient
 - ☑ Today (home) + doctor note + reminders — TESTED

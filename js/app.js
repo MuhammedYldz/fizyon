@@ -440,6 +440,7 @@
     stopCamera();
     if (timerInt) { clearInterval(timerInt); timerInt = null; }
     const route = stack[stack.length - 1];
+    app.dataset.route = route; // lets CSS adapt specific screens (e.g. desktop detail layout)
     app.classList.toggle('big-text', uiGet('bigText'));
     app.innerHTML = (screens[route] || screens.welcome)();
     window.scrollTo(0, 0);

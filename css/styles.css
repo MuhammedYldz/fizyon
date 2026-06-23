@@ -259,4 +259,32 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 
   /* Use the extra width: two-up patient/stat cards */
   #app:has(.tabbar) .grid2{gap:14px}
+
+  /* Doctor detail & exercise screens (pushed views with a back-bar, no tabbar):
+     give them a comfortable centered web column instead of the 440px phone strip. */
+  #app[data-route="d_patient"],
+  #app[data-route="d_build"],
+  #app[data-route="d_newpatient"],
+  #app[data-route="p_exercise"],
+  #app[data-route="p_verify"],
+  #app[data-route="p_done"]{ max-width:820px; }
+
+  #app[data-route="d_patient"] .screen,
+  #app[data-route="d_build"] .screen,
+  #app[data-route="d_newpatient"] .screen,
+  #app[data-route="p_exercise"] .screen,
+  #app[data-route="p_verify"] .screen,
+  #app[data-route="p_done"] .screen{ padding:26px 36px 64px; }
+
+  #app[data-route="d_patient"] .appbar,
+  #app[data-route="d_build"] .appbar,
+  #app[data-route="d_newpatient"] .appbar,
+  #app[data-route="p_exercise"] .appbar,
+  #app[data-route="p_verify"] .appbar,
+  #app[data-route="p_done"] .appbar{ padding:20px 36px 6px; }
+
+  /* New-patient & program-builder forms read better not full-bleed */
+  #app[data-route="d_newpatient"] .field,
+  #app[data-route="d_newpatient"] .btn,
+  #app[data-route="d_build"] .btn{ max-width:520px; }
 }

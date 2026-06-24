@@ -4,33 +4,33 @@ Fizyon is a PWA. To ship on Google Play we wrap it as a **TWA (Trusted Web Activ
 Bubblewrap. The web app stays the single source of truth; the Play listing just installs it.
 
 ## 0. Prerequisites (account/human-gated — only you can do these)
-- A **Google Play Developer account** ($25 one-time).
-- A signing **keystore** (generated locally; back it up — losing it blocks future updates).
-- A production domain you control (see §3 — GitHub Pages project subpaths don't work for TWA verification).
+- A **Google Play Developer account** ($25 one-time) — your Google account `info@getpp.net`.
+- A signing **keystore** (Bubblewrap generates one in step 1; **back it up** — losing it blocks future updates).
+- Production domain ✅ already done: the app is live at **https://app.fizyon.net** (Cloudflare Pages, origin root — TWA verification works).
 
 ## 1. Build the Android package (TWA via Bubblewrap)
+Everything is pre-configured (`twa-manifest.json` → host `app.fizyon.net`, package `net.fizyon.app`, PNG icons live). Just run:
 ```bash
-npm i -g @bubblewrap/cli
-bubblewrap init --manifest https://YOUR-DOMAIN/manifest.webmanifest
-# answers: package id e.g. com.fizyon.app, app name "Fizyon", launcher "Fizyon"
-bubblewrap build      # produces app-release-signed.aab (upload this) + APK
-```
-`twa-manifest.json` in this repo is a starting config — edit `host`, `packageId`, colors.
-
-## 2. Digital Asset Links (removes the browser address bar)
-Host [`.well-known/assetlinks.json`](.well-known/assetlinks.json) at your domain **root**:
-`https://YOUR-DOMAIN/.well-known/assetlinks.json`
-Replace `<SHA256_FINGERPRINT>` with your signing key's fingerprint:
-```bash
-keytool -list -v -keystore android.keystore -alias android | grep SHA256
+cd ~/Desktop/Fizyon
+npm i -g @bubblewrap/cli          # first time only (downloads JDK 17 + Android SDK on first build)
+bubblewrap init --manifest https://app.fizyon.net/manifest.webmanifest
+# it reads the values above; set a keystore password when asked and SAVE IT
+bubblewrap build                  # → app-release-signed.aab (upload this to Play) + app-release-signed.apk (test install)
 ```
 
-## 3. ⚠️ Hosting note (important)
-TWA verification needs `assetlinks.json` at the **origin root**, with no path prefix. The current
-live URL is `https://muhammedyldz.github.io/fizyon/` (a project subpath) — that **cannot** host
-`/.well-known/` at the origin root. For a real release, use a **custom domain** (e.g. `fizyon.app`)
-pointed at the hosting, or publish to a `muhammedyldz.github.io` root repo. Then update `start_url`
-and the Bubblewrap `host`.
+## 2. Digital Asset Links (removes the browser address bar) — one value to fill after step 1
+After `bubblewrap init`, print the signing fingerprint and paste it into `.well-known/assetlinks.json`, then redeploy the app:
+```bash
+keytool -list -v -keystore android.keystore -alias android | grep SHA256   # copy the SHA256
+# → replace REPLACE_WITH_KEYSTORE_SHA256_FROM_bubblewrap_init in .well-known/assetlinks.json
+# redeploy: CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=7a77ac55b1be621c902b0f7b575165cb \
+#   npx -y wrangler@3 pages deploy . --project-name fizyon --branch main --commit-dirty=true
+```
+Live check: `https://app.fizyon.net/.well-known/assetlinks.json` (served at origin root ✅).
+
+## 3. Hosting — resolved ✅
+`assetlinks.json` is served at the origin root of **app.fizyon.net**, so TWA digital-asset-link
+verification works. No subpath problem. `start_url` and Bubblewrap `host` already point here.
 
 ## 4. Play Console — Data Safety form (answers)
 - **Personal info collected:** Name; Email address; Phone number (if phone signup enabled).
@@ -48,8 +48,7 @@ and the Bubblewrap `host`.
 
 ## 6. Content rating, listing assets
 - Complete the IARC content-rating questionnaire (likely "Everyone").
-- Assets needed: 512×512 icon (have `assets/logo.svg` — export PNG), feature graphic 1024×500,
-  ≥2 phone screenshots (use `tests/*.png`), short + full description (TR + EN).
+- Assets ready: **512×512 icon** `assets/icon-512.png` (+ maskable `assets/icon-maskable-512.png`, 192 `assets/icon-192.png`); ≥2 phone screenshots (use `tests/*.png`). Still need a feature graphic 1024×500 + short/full description (TR + EN).
 
 ## 7. Permissions declared
 - `CAMERA` — movement verification (on-device).

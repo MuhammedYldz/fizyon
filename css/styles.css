@@ -1,23 +1,33 @@
-/* Fizyon design system — see DESIGN.md */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+/* Fizyon design system — see DESIGN.md
+   Direction: "range of motion" — a healing-teal + coral identity with a soft-serif
+   display (Fraunces) used with restraint, against Plus Jakarta Sans for UI.
+   Signature: the motion arc (the path a recovering limb travels). */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
 
 :root{
-  --teal-700:#0A5F4E; --teal-600:#0E7C66; --teal-500:#149A7E; --teal-100:#BFE6DC; --teal-50:#E6F4F0;
+  --teal-800:#073D33; --teal-700:#0A5F4E; --teal-600:#0E7C66; --teal-500:#149A7E; --teal-400:#36B79A; --teal-100:#BFE6DC; --teal-50:#E6F4F0;
   --coral-600:#D8482C; --coral-500:#F2674A; --coral-100:#F9CFC4; --coral-50:#FCEAE5;
-  --ink-900:#0F1A17; --ink-700:#2B3A35; --ink-500:#5C6B66; --ink-300:#9AA8A3;
-  --line:#E4EAE8; --surface:#FFFFFF; --bg:#F6F8F7;
+  --ink-900:#0E1A16; --ink-700:#2B3A35; --ink-500:#5C6B66; --ink-300:#9AA8A3;
+  --line:#E2EAE7; --surface:#FFFFFF; --bg:#EFF4F1;
   --success:#0E7C66; --success-bg:#E6F4F0; --warn:#C77A0E; --warn-bg:#FBF0DD; --danger:#D64545; --danger-bg:#FBEAEA;
-  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-pill:999px;
-  --shadow:0 2px 8px rgba(15,26,23,.06); --shadow-lg:0 8px 28px rgba(15,26,23,.14);
+  --font-display:'Fraunces',ui-serif,Georgia,serif;
+  --r-sm:9px; --r-md:13px; --r-lg:18px; --r-xl:24px; --r-pill:999px;
+  --shadow-sm:0 1px 2px rgba(11,60,51,.05);
+  --shadow:0 4px 16px -4px rgba(11,60,51,.10), 0 2px 5px -2px rgba(11,60,51,.06);
+  --shadow-lg:0 18px 48px -12px rgba(11,60,51,.22), 0 6px 16px -8px rgba(11,60,51,.12);
+  --ring:color-mix(in srgb,var(--teal-500) 40%,transparent);
   --maxw:440px;
 }
 @media (prefers-color-scheme:dark){
   :root{
-    --teal-600:#1FB596; --teal-500:#37C7A9; --teal-100:#194D42; --teal-50:#13302A;
+    --teal-800:#0C4C40; --teal-700:#16876F; --teal-600:#1FB596; --teal-500:#37C7A9; --teal-400:#5BD8BD; --teal-100:#194D42; --teal-50:#13302A;
     --coral-500:#FF7E63; --coral-50:#3A211B;
     --ink-900:#EAF1EE; --ink-700:#C5D2CE; --ink-500:#93A39E; --ink-300:#6A7A75;
-    --line:#243531; --surface:#13201C; --bg:#0C1614;
+    --line:#243531; --surface:#13201C; --bg:#0A1311;
     --success-bg:#13302A; --warn-bg:#33260E; --danger:#F2807F; --danger-bg:#3A1C1C;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+    --shadow:0 4px 18px -4px rgba(0,0,0,.5);
+    --shadow-lg:0 20px 50px -12px rgba(0,0,0,.6);
   }
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -38,24 +48,27 @@ button{font-family:inherit}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.screen{animation:none}*{transition:none!important}}
 
-/* Typography */
-h1{font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-.5px}
-h2{font-size:22px;font-weight:600;line-height:1.25}
-h3{font-size:18px;font-weight:600}
+/* Typography — Fraunces (display, used with restraint) + Plus Jakarta Sans (UI) */
+h1{font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.12;letter-spacing:-.4px}
+h2{font-family:var(--font-display);font-size:23px;font-weight:600;line-height:1.2;letter-spacing:-.2px}
+h3{font-size:17px;font-weight:700;letter-spacing:-.1px}
+.display{font-family:var(--font-display)}
 .muted{color:var(--ink-500)}
 .hint{color:var(--ink-300);font-size:14px}
-.caption{font-size:12px;font-weight:500;color:var(--ink-500)}
+.caption{font-size:12px;font-weight:600;color:var(--ink-500);letter-spacing:.02em}
 .center{text-align:center}
+/* premium numerals use the display face */
+.timer,.stat .v,.ach-stat .v,.ach-card h2{font-family:var(--font-display)}
 
 /* Top bar */
 .appbar{display:flex;align-items:center;gap:12px;padding:14px 18px;position:sticky;top:0;background:var(--bg);z-index:20}
 .appbar .back{width:40px;height:40px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:var(--ink-900)}
 .appbar h2{flex:1}
-.brand{display:flex;align-items:center;gap:10px;font-weight:600}
-.brand img{width:30px;height:30px;border-radius:8px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:600;font-size:20px;letter-spacing:-.3px}
+.brand img{width:30px;height:30px;border-radius:9px}
 
 /* Cards */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
 .card.flush{padding:0;overflow:hidden}
 .row{display:flex;align-items:center;gap:12px}
 .row.between{justify-content:space-between}
@@ -69,14 +82,16 @@ h3{font-size:18px;font-weight:600}
 .avatar.lg{width:64px;height:64px;font-size:22px}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:var(--r-md);font-size:16px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:transform .12s,background .15s;width:100%}
-.btn:active{transform:scale(.98)}
-.btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--teal-600) 35%,transparent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:50px;padding:0 20px;border-radius:var(--r-md);font-size:16px;font-weight:700;letter-spacing:-.1px;cursor:pointer;border:1px solid transparent;transition:transform .12s ease,box-shadow .18s ease,background .15s;width:100%}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
 .btn[disabled]{opacity:.4;pointer-events:none}
-.btn-primary{background:var(--teal-600);color:#fff}
-.btn-primary:hover{background:var(--teal-500)}
-.btn-accent{background:var(--coral-500);color:#fff}
-.btn-secondary{background:var(--surface);border-color:var(--line);color:var(--ink-900)}
+.btn-primary{background:linear-gradient(180deg,var(--teal-500),var(--teal-600));color:#fff;box-shadow:0 8px 20px -8px color-mix(in srgb,var(--teal-600) 75%,transparent)}
+.btn-primary:hover{filter:brightness(1.04);box-shadow:0 12px 26px -8px color-mix(in srgb,var(--teal-600) 70%,transparent)}
+.btn-accent{background:linear-gradient(180deg,var(--coral-500),var(--coral-600));color:#fff;box-shadow:0 8px 20px -8px color-mix(in srgb,var(--coral-600) 70%,transparent)}
+.btn-accent:hover{filter:brightness(1.04)}
+.btn-secondary{background:var(--surface);border-color:var(--line);color:var(--ink-900);box-shadow:var(--shadow-sm)}
+.btn-secondary:hover{border-color:var(--teal-100)}
 .btn-ghost{background:transparent;color:var(--teal-600);width:auto;height:auto;padding:8px}
 .btn-danger{background:transparent;border-color:var(--danger);color:var(--danger)}
 .btn.sm{height:40px;font-size:14px;padding:0 14px;width:auto}
@@ -125,12 +140,12 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 .tabwrap button{display:flex;align-items:center;gap:8px;border:none;background:transparent;color:var(--ink-500);padding:11px;border-radius:var(--r-pill);cursor:pointer;font-size:14px;font-weight:600;transition:background .2s,color .2s,padding .2s}
 .tabwrap button i{font-size:22px}
 .tabwrap button .lbl{display:none;white-space:nowrap}
-.tabwrap button.on{background:var(--teal-600);color:#fff;padding:11px 18px}
+.tabwrap button.on{background:linear-gradient(180deg,var(--teal-500),var(--teal-600));color:#fff;padding:11px 18px;box-shadow:0 6px 14px -6px color-mix(in srgb,var(--teal-600) 80%,transparent)}
 .tabwrap button.on .lbl{display:inline}
 .tabwrap button:active{transform:scale(.95)}
 
 /* Achievement / share card */
-.ach-card{background:var(--teal-600);color:#fff;border-radius:var(--r-xl,16px);padding:26px 22px;text-align:center;position:relative;overflow:hidden}
+.ach-card{background:linear-gradient(155deg,var(--teal-500),var(--teal-800));color:#fff;border-radius:var(--r-xl);padding:28px 22px;text-align:center;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
 .ach-card .ach-logo{width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px}
 .ach-card h2{color:#fff;font-size:24px;margin-bottom:4px}
 .ach-card .ach-name{font-size:18px;font-weight:600;margin-top:2px}
@@ -299,6 +314,24 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 /* Appointment slots */
 .slot{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);cursor:pointer;text-align:left;color:var(--ink-900);margin-bottom:8px}
 .slot:active{background:var(--bg)}
+
+/* ===== Welcome hero — signature "range of motion" arc ===== */
+.welcome-hero{min-height:88vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:40px}
+.wh-arc{position:relative;width:248px;height:176px;margin-bottom:6px}
+.wh-arc svg{width:100%;height:100%;overflow:visible}
+.wh-track{fill:none;stroke:var(--teal-100);stroke-width:3;stroke-linecap:round;opacity:.8}
+.wh-fill{fill:none;stroke:var(--teal-500);stroke-width:5;stroke-linecap:round;stroke-dasharray:290;stroke-dashoffset:290;animation:wh-draw 1.7s .25s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes wh-draw{to{stroke-dashoffset:0}}
+.wh-dot{fill:var(--coral-500);filter:drop-shadow(0 3px 7px color-mix(in srgb,var(--coral-500) 55%,transparent))}
+.wh-logo{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:26px;background:var(--surface);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;animation:wh-pop .55s 1.5s both}
+.wh-logo img{border-radius:16px}
+@keyframes wh-pop{from{transform:translate(-50%,-50%) scale(.5);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.wh-title{font-size:35px;line-height:1.05;margin-top:8px}
+.wh-sub{color:var(--ink-500);font-size:17px;max-width:300px;margin:12px auto 0;line-height:1.5}
+.wh-sub b{color:var(--teal-700);font-weight:700}
+.wh-cta{max-width:320px;width:100%;margin:28px auto 0;display:flex;flex-direction:column;gap:12px}
+.wh-trust{margin-top:22px;font-size:13px;color:var(--ink-300);display:flex;align-items:center;gap:6px}
+@media (prefers-reduced-motion:reduce){.wh-fill{animation:none;stroke-dashoffset:0}.wh-logo{animation:none}}
 
 /* Misc */
 .divider{height:1px;background:var(--line);margin:16px 0}

@@ -59,16 +59,23 @@
   const screens = {
     /* Onboarding */
     welcome() {
-      return `<section class="screen center fade" style="display:flex;flex-direction:column;justify-content:center;min-height:80vh">
-        <img src="assets/logo.svg" width="84" height="84" style="border-radius:20px;margin:0 auto 22px" alt="">
-        <h1>Fizyon</h1>
-        <p class="muted mt8" style="font-size:18px">Egzersizini yap. Kanıtla. İyileş.</p>
-        <p class="hint mt8" style="max-width:300px;margin:8px auto 0">Fizyoterapistinin verdiği ev programını takip et, kamerayla kanıtla, ilerlemeni gör.</p>
-        <div class="stack mt24" style="max-width:320px;margin:24px auto 0;width:100%">
+      return `<section class="screen welcome-hero fade">
+        <div class="wh-arc" aria-hidden="true">
+          <svg viewBox="0 0 240 168">
+            <path class="wh-track" d="M28 150 A 110 110 0 0 1 212 150"/>
+            <path class="wh-fill" d="M28 150 A 110 110 0 0 1 212 150"/>
+            <circle class="wh-dot" r="7"><animateMotion dur="1.7s" begin="0.25s" fill="freeze" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.4 0 0.2 1" path="M28 150 A 110 110 0 0 1 212 150"/></circle>
+          </svg>
+          <span class="wh-logo"><img src="assets/logo.svg" width="56" height="56" alt=""></span>
+        </div>
+        <h1 class="wh-title">Hareketi geri kazan.</h1>
+        <p class="wh-sub">Fizyoterapistinin ev programını yap, <b>kamerayla kanıtla</b>, iyileşmeni gör.</p>
+        <div class="wh-cta">
           <button class="btn btn-primary" data-go="reg_type">Üye ol</button>
           <button class="btn btn-secondary" data-go="login">Giriş yap</button>
-          <button class="btn-ghost" data-go="demo_pick" style="margin:6px auto 0"><i class="ti ti-eye"></i> Demo olarak gez</button>
+          <button class="btn-ghost" data-go="demo_pick" style="margin:2px auto 0"><i class="ti ti-eye"></i> Demo olarak gez</button>
         </div>
+        <div class="wh-trust"><i class="ti ti-lock" style="vertical-align:-2px"></i> Sağlık verilerin KVKK kapsamında, cihazında işlenir</div>
       </section>`;
     },
 

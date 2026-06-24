@@ -151,36 +151,116 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 .sheet{background:var(--surface);width:100%;max-width:var(--maxw);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:22px 18px max(22px,env(safe-area-inset-bottom));box-shadow:var(--shadow-lg)}
 .sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
 
-/* Animated exercise demos — "gray body" looped figures (offline fallback) */
-.demo-stage{position:relative;background:var(--bg);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.fz-demo{width:62%;max-width:200px;color:var(--ink-300)}
-.fz-demo *{transform-box:fill-box}
+/* Animated exercise demos — clean "gray body" looped figures (offline fallback).
+   The limb a given exercise works is highlighted teal; the rest stays gray. */
+.demo-stage{position:relative;background:radial-gradient(120% 90% at 50% 18%,var(--teal-50),var(--bg) 70%);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.fz-demo{width:74%;max-width:240px;color:var(--ink-300)}
+.fz-demo g{transform-box:view-box}
 .fz-demo .seg{fill:currentColor}
-.fz-demo .joint{fill:var(--ink-500)}
+.fz-demo .joint{fill:var(--ink-500);opacity:.7}
+.fz-demo .d-shadow{fill:rgba(15,26,23,.10)}
+.fz-demo .d-floor,.fz-demo .d-chair{stroke:var(--line);stroke-width:4;stroke-linecap:round}
+@media (prefers-color-scheme:dark){.fz-demo .d-shadow{fill:rgba(0,0,0,.35)}}
+.preset .pv .fz-demo,.demo-stage.sm .fz-demo{width:88%}
+
+/* Active-muscle highlight (shown even with reduced motion) */
+.fz-demo--squat .d-legs .seg,.fz-demo--wallsquat .d-legs .seg,.fz-demo--lunge .d-legs .seg,
+.fz-demo--calfraise .d-legs .seg,.fz-demo--marching .d-legs .seg,
+.fz-demo--balance .d-legR .seg,.fz-demo--hipabduction .d-legR .seg,
+.fz-demo--legraise .d-legR .seg,.fz-demo--clamshell .d-legR .seg,
+.fz-demo--heelslide .d-legR .seg,.fz-demo--sidelegraise .d-legR .seg,
+.fz-demo--bridge .d-hips .seg,
+.fz-demo--shoulder .d-arms .seg,.fz-demo--armraise .d-arms .seg,
+.fz-demo--shrug .d-arms .seg,.fz-demo--pendulum .d-armR .seg,
+.fz-demo--neckTilt .d-head .seg,.fz-demo--neckRotation .d-head .seg,
+.fz-demo--kneeextension .d-shin .seg,
+.fz-demo--catcow .d-spine .seg,.fz-demo--birddog .d-armR .seg{
+  fill:var(--teal-500);filter:drop-shadow(0 0 3px color-mix(in srgb,var(--teal-500) 55%,transparent));
+}
+
 @media (prefers-reduced-motion:no-preference){
-  .fz-demo--squat .d-body{transform-origin:center bottom;animation:d-sq 2.6s ease-in-out infinite}
-  .fz-demo--squat .d-legs{transform-origin:center bottom;animation:d-sqlegs 2.6s ease-in-out infinite}
+  /* standing — squats / sit-to-stand */
+  .fz-demo--squat .d-body,.fz-demo--wallsquat .d-body{animation:d-sq 2.6s ease-in-out infinite}
+  .fz-demo--squat .d-legs,.fz-demo--wallsquat .d-legs{transform-origin:60px 176px;animation:d-sqlegs 2.6s ease-in-out infinite}
   @keyframes d-sq{0%,100%{transform:translateY(0)}50%{transform:translateY(26px)}}
   @keyframes d-sqlegs{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.66)}}
+  /* balance — sway + lift a leg */
   .fz-demo--balance{animation:d-sway 3s ease-in-out infinite}
-  .fz-demo--balance .d-legR{transform-origin:50% 0;animation:d-lift 3s ease-in-out infinite}
+  .fz-demo--balance .d-legR{transform-origin:66px 100px;animation:d-lift 3s ease-in-out infinite}
   @keyframes d-sway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
-  @keyframes d-lift{0%,100%{transform:rotate(0)}50%{transform:rotate(26deg) translateX(-6px)}}
-  .fz-demo--shoulder .d-arms{transform-origin:50% 18%;animation:d-arm 2.4s ease-in-out infinite}
-  @keyframes d-arm{0%,100%{transform:rotate(0)}50%{transform:rotate(-150deg)}}
-  .fz-demo--legraise .d-legR{transform-origin:0 50%;animation:d-leg 2.6s ease-in-out infinite}
-  @keyframes d-leg{0%,100%{transform:rotate(0)}50%{transform:rotate(-42deg)}}
-  .fz-demo--bridge .d-hips{transform-origin:center bottom;animation:d-bridge 2.6s ease-in-out infinite}
-  @keyframes d-bridge{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+  @keyframes d-lift{0%,100%{transform:rotate(0)}50%{transform:rotate(24deg) translateX(-5px)}}
+  /* lunge */
+  .fz-demo--lunge .d-body{animation:d-lungebody 2.8s ease-in-out infinite}
+  .fz-demo--lunge .d-legR{transform-origin:66px 100px;animation:d-lungeleg 2.8s ease-in-out infinite}
+  @keyframes d-lungebody{0%,100%{transform:translateY(0)}50%{transform:translateY(16px)}}
+  @keyframes d-lungeleg{0%,100%{transform:rotate(0)}50%{transform:rotate(28deg)}}
+  /* calf raise — rise on toes */
+  .fz-demo--calfraise{animation:d-calf 1.9s ease-in-out infinite}
+  @keyframes d-calf{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  /* marching — alternate knee lift */
+  .fz-demo--marching .d-legL{transform-origin:54px 100px;animation:d-marchL 1.8s ease-in-out infinite}
+  .fz-demo--marching .d-legR{transform-origin:66px 100px;animation:d-marchR 1.8s ease-in-out infinite}
+  @keyframes d-marchL{0%,50%,100%{transform:rotate(0)}25%{transform:rotate(-30deg)}}
+  @keyframes d-marchR{0%,50%,100%{transform:rotate(0)}75%{transform:rotate(30deg)}}
+  /* shoulder rotation / generic arms */
+  .fz-demo--shoulder .d-arms{transform-origin:60px 52px;animation:d-shoulder 2.6s ease-in-out infinite}
+  @keyframes d-shoulder{0%,100%{transform:rotate(0)}50%{transform:rotate(-26deg)}}
+  /* arm raise — front raise */
+  .fz-demo--armraise .d-arms{transform-origin:60px 52px;animation:d-armraise 2.6s ease-in-out infinite}
+  @keyframes d-armraise{0%,100%{transform:rotate(0)}50%{transform:rotate(-160deg)}}
+  /* shrug — shoulders up/down */
+  .fz-demo--shrug .d-arms{animation:d-shrug 2s ease-in-out infinite}
+  .fz-demo--shrug .d-head{animation:d-shrughead 2s ease-in-out infinite}
+  @keyframes d-shrug{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes d-shrughead{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+  /* pendulum — one arm swings */
+  .fz-demo--pendulum .d-armR{transform-origin:73px 52px;animation:d-pendulum 2.4s ease-in-out infinite}
+  @keyframes d-pendulum{0%,100%{transform:rotate(22deg)}50%{transform:rotate(-22deg)}}
+  /* neck tilt + rotate */
+  .fz-demo--neckTilt .d-head{transform-origin:60px 40px;animation:d-necktilt 3s ease-in-out infinite}
+  @keyframes d-necktilt{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
+  .fz-demo--neckRotation .d-head{transform-origin:60px 40px;animation:d-neckrot 3s ease-in-out infinite}
+  @keyframes d-neckrot{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.62)}}
+  /* hip abduction — standing leg out */
+  .fz-demo--hipabduction .d-legR{transform-origin:66px 100px;animation:d-hipab 2.6s ease-in-out infinite}
+  @keyframes d-hipab{0%,100%{transform:rotate(0)}50%{transform:rotate(24deg)}}
+  /* generic — gentle breathe */
   .fz-demo--generic{animation:d-breathe 3.2s ease-in-out infinite}
   @keyframes d-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+  /* reclined — bridge / leg raise / clamshell / heel slide / side leg */
+  .fz-demo--bridge .d-hips{animation:d-bridge 2.6s ease-in-out infinite}
+  @keyframes d-bridge{0%,100%{transform:translateY(0)}50%{transform:translateY(-22px)}}
+  .fz-demo--legraise .d-legR{transform-origin:120px 64px;animation:d-legraise 2.6s ease-in-out infinite}
+  @keyframes d-legraise{0%,100%{transform:rotate(0)}50%{transform:rotate(-44deg)}}
+  .fz-demo--clamshell .d-legR{transform-origin:120px 64px;animation:d-clam 2.4s ease-in-out infinite}
+  @keyframes d-clam{0%,100%{transform:rotate(0)}50%{transform:rotate(-26deg)}}
+  .fz-demo--heelslide .d-legR{transform-origin:120px 64px;animation:d-heel 2.8s ease-in-out infinite}
+  @keyframes d-heel{0%,100%{transform:translateX(0) rotate(0)}50%{transform:translateX(-34px) rotate(-20deg)}}
+  .fz-demo--sidelegraise .d-legR{transform-origin:120px 64px;animation:d-sideleg 2.6s ease-in-out infinite}
+  @keyframes d-sideleg{0%,100%{transform:rotate(0)}50%{transform:rotate(-34deg)}}
+
+  /* seated — knee extension */
+  .fz-demo--kneeextension .d-shin{transform-origin:106px 99px;animation:d-knee 2.6s ease-in-out infinite}
+  @keyframes d-knee{0%,100%{transform:rotate(0)}50%{transform:rotate(-78deg)}}
+
+  /* quadruped — cat-cow / bird-dog */
+  .fz-demo--catcow .d-spine{animation:d-catcow 3s ease-in-out infinite}
+  .fz-demo--catcow .d-head{transform-origin:50px 56px;animation:d-catcowhead 3s ease-in-out infinite}
+  @keyframes d-catcow{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-8px) scaleY(.9)}}
+  @keyframes d-catcowhead{0%,100%{transform:rotate(0)}50%{transform:rotate(28deg)}}
+  .fz-demo--birddog .d-armR{transform-origin:126px 62px;animation:d-birddog 2.8s ease-in-out infinite}
+  @keyframes d-birddog{0%,100%{transform:rotate(0)}50%{transform:rotate(-86deg)}}
 }
-.demo-src{position:absolute;top:10px;left:10px}
+.demo-src{position:absolute;top:10px;left:10px;z-index:2}
 
 /* Timer */
 .timer{font-size:56px;font-weight:600;letter-spacing:1px;line-height:1;font-variant-numeric:tabular-nums}
 .timer-ring{--p:0;width:200px;height:200px;border-radius:50%;background:conic-gradient(var(--teal-500) calc(var(--p)*1%),var(--line) 0);display:flex;align-items:center;justify-content:center;margin:0 auto;transition:--p .2s linear}
 .timer-ring .inner{width:172px;height:172px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.set-dots{display:flex;gap:8px;justify-content:center}
+.set-dot{width:12px;height:12px;border-radius:50%;background:var(--line);transition:background .25s,transform .25s}
+.set-dot.on{background:var(--teal-500);transform:scale(1.12)}
 
 /* Camera */
 .cam-stage{position:relative;width:100%;aspect-ratio:3/4;background:#0b1614;border-radius:var(--r-lg);overflow:hidden;display:flex;align-items:center;justify-content:center}
@@ -211,6 +291,14 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 .reward.locked{opacity:.45}
 .reward.locked .rc{background:var(--bg);color:var(--ink-300)}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+
+/* Program builder — tappable exercise row to edit */
+.ex-edit{background:none;border:none;padding:0;text-align:left;cursor:pointer;color:var(--ink-900)}
+.ex-edit:active{opacity:.7}
+
+/* Appointment slots */
+.slot{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);cursor:pointer;text-align:left;color:var(--ink-900);margin-bottom:8px}
+.slot:active{background:var(--bg)}
 
 /* Misc */
 .divider{height:1px;background:var(--line);margin:16px 0}
@@ -265,6 +353,7 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
   #app[data-route="d_patient"],
   #app[data-route="d_build"],
   #app[data-route="d_newpatient"],
+  #app[data-route="d_appts"],
   #app[data-route="p_exercise"],
   #app[data-route="p_verify"],
   #app[data-route="p_done"]{ max-width:820px; }
@@ -272,6 +361,7 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
   #app[data-route="d_patient"] .screen,
   #app[data-route="d_build"] .screen,
   #app[data-route="d_newpatient"] .screen,
+  #app[data-route="d_appts"] .screen,
   #app[data-route="p_exercise"] .screen,
   #app[data-route="p_verify"] .screen,
   #app[data-route="p_done"] .screen{ padding:26px 36px 64px; }
@@ -279,6 +369,7 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
   #app[data-route="d_patient"] .appbar,
   #app[data-route="d_build"] .appbar,
   #app[data-route="d_newpatient"] .appbar,
+  #app[data-route="d_appts"] .appbar,
   #app[data-route="p_exercise"] .appbar,
   #app[data-route="p_verify"] .appbar,
   #app[data-route="p_done"] .appbar{ padding:20px 36px 6px; }

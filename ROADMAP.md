@@ -44,6 +44,21 @@ Each feature is built, then **tested with Playwright**, before the next. Status:
 - ☐ Phone OTP (needs SMS provider), custom SMTP (built-in email rate-limited), custom domain for TWA, EU data residency, lawyer/VERBİS
 - Note: condition/week not captured at patient self-signup (doctor sets clinical context); minor follow-up
 
+## Starred backlog (2026-06-24) — all built & tested in demo (0 console errors)
+- ☑ **Egzersiz animasyonları belirgin/canlı + sayı artırıldı**: yeni figür sistemi (ayakta/yatar/oturur/emekleme),
+  her egzersiz çalışan uzvu **teal vurgular + animasyonu belirginleştirir**; 22 animasyon, **28 hazır hareket**,
+  7 kategori (diz/bel/omuz/**boyun/kalça**/genel), 7 hazır protokol.
+- ☑ **Kamera kanıtı harekete dayalı/tutarlı**: egzersize göre vücut sinyali (kalça/diz/kol/baş), torso boyuna
+  normalize, ~1 sn kalibrasyon + EMA yumuşatma + histerezisli tekrar sayımı; denge/tutuş için stabilite kontrolü.
+  (Gerçek cihazda eşik ince ayarı gerekebilir — kamerasız demoda doğrulandı.)
+- ☑ **Doktor→hasta tam akış**: program/hareket **düzenleme** (eklendi), not, video; **Supabase Realtime** ile
+  hastada **anlık görünme** (program/not/randevu değişince otomatik tazelenir + bildirim).
+- ☑ **Push hatırlatma + e-posta/SMTP**: client push aboneliği + service worker push/tık olayları + `push_subscriptions`
+  tablosu; saatlik **Edge Function** (`supabase/functions/send-reminders`, VAPID + Resend) — kurulum: REMINDERS.md.
+  (VAPID/SMTP/Resend hesap anahtarları + cron kullanıcı tarafından girilecek.)
+- ☑ **Randevu (link + iç slot)**: doktor profilinde **Randevular** ekranı — dış randevu bağlantısı (Calendly vb.)
+  + iç **boş saat** sistemi; hasta uygulamadan açık saatlerden randevu alır. `appointment_slots` tablosu + RLS.
+
 ## Cross-cutting
 - ☐ 3-tap navigation audit
 - ☐ Accessibility pass (contrast, tap targets, reduced-motion)
@@ -59,3 +74,7 @@ Each feature is built, then **tested with Playwright**, before the next. Status:
   demo + timer, camera verify (no-camera fallback + sim-verify → marks done, awards points,
   syncs), gamification journey, doctor analytics (2 charts). Fixed: textarea font-family
   inherit, SW network-first to avoid stale cache. 0 console errors. Screenshots in tests/.
+- 2026-06-24 (Playwright, 430×880): all 22 exercise demos render + animate + highlight correct limb;
+  patient booking (slot → nextAppt updates); player animation + cue; camera fallback + sim-verify;
+  doctor builder edit-exercise (10×3→15×3 persisted); 7 protocols (diz "önerilen"); 28 presets/7 cats;
+  doctor Randevular screen (booking-url save + add-slot). 0 console errors/warnings.

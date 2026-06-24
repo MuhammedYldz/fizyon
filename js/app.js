@@ -1,4 +1,4 @@
-/* Fizyon app core — vanilla SPA: state, router, screens. */
+/* Fizyon app core, vanilla SPA: state, router, screens. */
 (function () {
   const app = document.getElementById('app');
   const S = window.FZ;
@@ -13,6 +13,12 @@
   const CUES = { squat: 'Yavaşça çök, sonra kalk', legraise: 'Bacağını düz kaldır, yavaşça indir', balance: 'Tek ayak üstünde sabit dur', bridge: 'Kalçanı yukarı kaldır, indir', shoulder: 'Kolunu kontrollü hareket ettir', generic: 'Yavaş ve kontrollü hareket et' };
   const cueFor = (demo) => CUES[demo] || CUES.generic;
   const targetText = (e) => (e.reps > 1 ? e.reps + ' tekrar' : (e.hold || 5) + ' sn dur');
+  /* daily session tracking: a "session" = one full run of an exercise (all sets),
+     proven once. An exercise is done for the day after `freq` sessions. */
+  const todayStr = () => new Date().toISOString().slice(0, 10);
+  const sessionsOf = (p, exId, date) => (p.sessions || []).filter(s => s.exId === exId && (!date || s.date === date));
+  const sessionsToday = (p, exId) => sessionsOf(p, exId, todayStr()).length;
+  const isDoneToday = (p, e) => sessionsToday(p, e.id) >= (e.freq || 1);
   const uiGet = (k) => { try { return localStorage.getItem('fizyon.ui.' + k) === '1'; } catch { return false; } };
   const uiSet = (k, v) => { try { localStorage.setItem('fizyon.ui.' + k, v ? '1' : '0'); } catch {} };
 
@@ -77,7 +83,7 @@
           </button>
           <button class="option" data-reg="phone">
             <span class="oi"><i class="ti ti-device-mobile-message"></i></span>
-            <span><span class="ot">Telefon (SMS kodu) ile</span><br><span class="od">Numaranı doğrula — parola yok, daha az uğraş.</span></span>
+            <span><span class="ot">Telefon (SMS kodu) ile</span><br><span class="od">Numaranı doğrula, parola yok, daha az uğraş.</span></span>
           </button>
         </div>
         <p class="hint center mt24"><i class="ti ti-lock" style="vertical-align:-2px"></i> Sağlık verilerin KVKK kapsamında korunur.</p>
@@ -126,7 +132,7 @@
     demo_pick() {
       return `${appbar('Demo', { back: true })}
       <section class="screen">
-        <div class="card" style="background:var(--warn-bg);border-color:transparent;margin-bottom:16px"><p style="color:var(--warn);font-size:14px;margin:0"><i class="ti ti-flask"></i> Demo modu — örnek verilerle gezinirsin, gerçek hesap oluşmaz.</p></div>
+        <div class="card" style="background:var(--warn-bg);border-color:transparent;margin-bottom:16px"><p style="color:var(--warn);font-size:14px;margin:0"><i class="ti ti-flask"></i> Demo modu, örnek verilerle gezinirsin, gerçek hesap oluşmaz.</p></div>
         <div class="stack">
           <button class="option" data-act="demo-doctor">
             <span class="oi"><i class="ti ti-stethoscope"></i></span>
@@ -191,7 +197,10 @@
           <div class="card"><div style="position:relative;height:160px"><canvas id="adChart"></canvas></div></div>
 
           <div class="row between" style="margin:18px 0 8px"><h3>Program</h3><button class="btn btn-primary sm" data-act="build" data-id="${p.id}"><i class="ti ti-plus"></i> Düzenle</button></div>
-          ${p.program.length ? p.program.map(e => `<div class="card"><div class="row between"><div><div style="font-weight:600">${esc(e.name)}</div><div class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''}</div></div><i class="ti ${e.done ? 'ti-circle-check' : 'ti-circle'}" style="font-size:22px;color:${e.done ? 'var(--teal-600)' : 'var(--ink-300)'}"></i></div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}</div>`).join('') : '<p class="hint">Henüz program yok. "Düzenle" ile ekle.</p>'}
+          ${p.program.length ? p.program.map(e => {
+            const need = e.freq || 1, dc = sessionsToday(p, e.id), ok = dc >= need, nv = sessionsOf(p, e.id, '').filter(s => s.date === (new Date().toISOString().slice(0, 10)) && !s.verified).length;
+            return `<div class="card"><div class="row between"><div><div style="font-weight:600">${esc(e.name)}</div><div class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''} · günde ${need} kez</div></div><span class="badge ${ok ? 'teal' : 'warn'}">${dc}/${need} bugün</span></div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}${nv ? `<div class="badge warn mt8"><i class="ti ti-shield-off"></i> Bugün ${nv} kez kanıtsız</div>` : ''}</div>`;
+          }).join('') : '<p class="hint">Henüz program yok. "Düzenle" ile ekle.</p>'}
 
           <div class="row between" style="margin:18px 0 8px"><h3>Geri bildirim</h3><button class="btn btn-primary sm" data-act="reply-note" data-id="${p.id}"><i class="ti ti-message-plus"></i> Not gönder</button></div>
           ${couldnt}
@@ -206,8 +215,8 @@
       const list = p.program.length ? p.program.map(e => `
         <div class="card">
           <div class="row between">
-            <div class="row"><span class="pv" style="width:46px;height:46px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden">${fzDemo(e.demo)}</span>
-              <div><div style="font-weight:600">${esc(e.name)}</div><div class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''}</div></div></div>
+            <button class="row ex-edit" data-act="edit-ex" data-eid="${e.id}" style="flex:1"><span class="pv" style="width:46px;height:46px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden">${fzDemo(e.demo)}</span>
+              <span><span style="font-weight:600">${esc(e.name)}</span><br><span class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''} · <i class="ti ti-pencil" style="vertical-align:-1px"></i> düzenle</span></span></button>
             <button class="btn-ghost" data-act="del-ex" data-eid="${e.id}" aria-label="Sil"><i class="ti ti-trash" style="color:var(--danger);font-size:20px"></i></button>
           </div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}
         </div>`).join('') : '<p class="hint" style="margin-bottom:8px">Henüz hareket yok. Aşağıdan ekle.</p>';
@@ -225,9 +234,9 @@
     d_newpatient() {
       return `${appbar('Yeni hasta', { back: true })}
         <section class="screen">
-          <p class="muted" style="margin-bottom:16px">Birkaç bilgiyle başla — programı sonra eklersin.</p>
+          <p class="muted" style="margin-bottom:16px">Birkaç bilgiyle başla, programı sonra eklersin.</p>
           <div class="field"><label for="npName">Ad soyad</label><input class="input" id="npName" placeholder="Hasta adı" autocomplete="off"></div>
-          <div class="field"><label for="npCond">Durum / bölge</label><input class="input" id="npCond" placeholder="Örn. Sol diz — menisküs"></div>
+          <div class="field"><label for="npCond">Durum / bölge</label><input class="input" id="npCond" placeholder="Örn. Sol diz, menisküs"></div>
           <div class="field"><label for="npWeek">Tedavi haftası</label><input class="input" id="npWeek" type="number" value="1" min="1" inputmode="numeric"></div>
           <div class="err-msg" id="npErr" hidden></div>
           <button class="btn btn-primary mt8" data-act="create-patient"><i class="ti ti-check"></i> Hasta oluştur</button>
@@ -273,21 +282,39 @@
         </section>
         ${tabbar('d_notifs', 'doctor')}`;
     },
+    d_appts() {
+      const st = S.get(); const slots = st.slots || [];
+      const slotRow = (s) => `<div class="list-item"><div style="flex:1"><div style="font-weight:600">${esc(s.date)} · ${esc(s.time)}</div><div class="hint">${s.bookedBy ? 'Dolu — ' + esc(slotPatientName(s.bookedBy)) : 'Boş'}</div></div>${s.bookedBy ? '<span class="badge teal"><i class="ti ti-user-check"></i> Dolu</span>' : `<button class="btn-ghost" data-act="del-slot" data-sid="${s.id}" aria-label="Sil"><i class="ti ti-trash" style="color:var(--danger);font-size:20px"></i></button>`}</div>`;
+      return `${appbar('Randevular', { back: true })}
+        <section class="screen">
+          <h3 style="margin-bottom:6px">Randevu bağlantın</h3>
+          <p class="hint" style="margin-bottom:10px">Kendi randevu sistemin (Calendly, Google Takvim vb.) varsa bağlantını ekle — hastaların oraya yönlendirilir.</p>
+          <div class="field"><input class="input" id="bkUrl" inputmode="url" placeholder="https://..." value="${esc(st.doctor.bookingUrl || '')}"></div>
+          <button class="btn btn-secondary" data-act="set-booking-url"><i class="ti ti-link"></i> Bağlantıyı kaydet</button>
+          <div class="divider"></div>
+          <h3 style="margin-bottom:6px">Uygun saatler (iç sistem)</h3>
+          <p class="hint" style="margin-bottom:10px">Boş saat ekle; hastaların uygulamadan seçip randevu alsın.</p>
+          <div class="num-row"><div class="field"><label>Tarih</label><input class="input" id="slDate" type="date"></div><div class="field"><label>Saat</label><input class="input" id="slTime" type="time" value="10:00"></div></div>
+          <button class="btn btn-secondary" data-act="add-slot"><i class="ti ti-plus"></i> Saat ekle</button>
+          <div class="card flush mt16">${slots.length ? slots.map(slotRow).join('') : '<p class="hint" style="padding:16px">Henüz uygun saat eklemedin.</p>'}</div>
+        </section>`;
+    },
     d_profile() { return profile('doctor'); },
 
     /* Patient */
     p_today() {
       session = null; // landing home cancels any running session
       const st = S.get(); const p = st.patients[0];
-      const done = p.program.filter(e => e.done).length;
-      const remaining = p.program.filter(e => !e.done).length;
-      const items = p.program.map(e => `
-        <button class="list-item" data-exercise="${e.id}">
-          <i class="ti ${e.done ? 'ti-circle-check' : 'ti-circle'}" style="font-size:24px;color:${e.done ? 'var(--teal-600)' : 'var(--ink-300)'}"></i>
-          <span style="flex:1"><span style="font-weight:600">${esc(e.name)}</span><br><span class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''}</span></span>
+      const done = p.program.filter(e => isDoneToday(p, e)).length;
+      const remaining = p.program.filter(e => !isDoneToday(p, e)).length;
+      const items = p.program.map(e => {
+        const dc = sessionsToday(p, e.id), need = e.freq || 1, ok = dc >= need;
+        return `<button class="list-item" data-exercise="${e.id}">
+          <i class="ti ${ok ? 'ti-circle-check' : 'ti-circle'}" style="font-size:24px;color:${ok ? 'var(--teal-600)' : 'var(--ink-300)'}"></i>
+          <span style="flex:1"><span style="font-weight:600">${esc(e.name)}</span><br><span class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''}${need > 1 ? ' · ' + dc + '/' + need + ' kez' : ''}</span></span>
           ${e.verify ? '<span class="badge teal"><i class="ti ti-shield-check"></i></span>' : ''}
           <i class="ti ti-player-play" style="font-size:20px;color:var(--teal-600)"></i>
-        </button>`).join('');
+        </button>`; }).join('');
       const docInit = st.doctor.name.replace('Fzt.', '').trim().split(' ').map(w => w[0]).join('').slice(0, 2);
       return `<div class="appbar"><div class="brand"><img src="assets/logo.svg" alt="">Fizyon</div><div class="spacer"></div>${st.settings.gamify ? `<span class="badge coral"><i class="ti ti-flame"></i> ${p.streak}</span>` : ''}</div>
         <section class="screen">
@@ -304,7 +331,9 @@
             <p class="mt8" style="color:var(--teal-700)">${esc(p.note)}</p>
           </div>
           <div class="card flush mt16">${items}</div>
-          <div class="row gap8 mt16 hint" style="align-items:center"><i class="ti ti-bell"></i> Hatırlatma: her gün ${esc(p.notif.times[0])} · <button class="btn-ghost" data-act="reminder" style="font-size:14px">değiştir</button></div>
+          <button class="list-item card mt16" data-act="open-booking" style="border-radius:var(--r-lg)"><i class="ti ti-calendar-event" style="font-size:24px;color:var(--teal-600)"></i><span style="flex:1"><span class="caption">Sonraki randevu</span><br><span style="font-weight:600">${esc(p.nextAppt || 'Planlanmadı')}</span></span><span class="badge teal"><i class="ti ti-calendar-plus"></i> Randevu al</span></button>
+          <button class="btn-ghost mt16" data-go="p_history" style="display:block;margin:14px auto 0"><i class="ti ti-history"></i> Egzersiz geçmişim</button>
+          <div class="row gap8 mt8 hint" style="align-items:center;justify-content:center"><i class="ti ti-bell"></i> Hatırlatma: her gün ${esc(p.notif.times[0])} · <button class="btn-ghost" data-act="reminder" style="font-size:14px">değiştir</button></div>
         </section>
         ${tabbar('p_today', 'patient')}`;
     },
@@ -313,9 +342,10 @@
       const p = S.get().patients[0];
       const e = p.program.find(x => x.id === params.eid) || p.program[0];
       const idx = p.program.indexOf(e) + 1;
+      const sets = e.sets || 1, dc = sessionsToday(p, e.id), need = e.freq || 1;
       return `${appbar(e.name, { back: true })}
         <section class="screen">
-          <p class="muted" style="margin-bottom:12px">${idx}/${p.program.length} · ${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn tut' : ''}</p>
+          <p class="muted" style="margin-bottom:12px">${idx}/${p.program.length} · ${e.reps}×${sets}${e.hold ? ' · ' + e.hold + ' sn tut' : ''}${need > 1 ? ' · bugün ' + (dc + 1) + '. kez (' + need + ' gerek)' : ''}</p>
           <div class="demo-stage" style="height:230px">
             <span class="badge teal demo-src"><i class="ti ti-${e.video ? 'video' : 'sparkles'}"></i> ${e.video ? 'Hekimin kaydı' : 'Hazır animasyon'}</span>
             ${fzDemo(e.demo)}
@@ -323,12 +353,17 @@
           <p class="caption center" style="margin:10px 0 0"><i class="ti ti-info-circle" style="vertical-align:-2px"></i> ${esc(cueFor(e.demo))} · ${esc(targetText(e))}</p>
           ${e.note ? `<div class="card mt16" style="background:var(--teal-50);border-color:var(--teal-100)"><span class="caption" style="color:var(--teal-600)"><i class="ti ti-bulb"></i> Hekim notu</span><p class="mt8" style="color:var(--teal-700)">${esc(e.note)}</p></div>` : ''}
           <div class="card mt16 center">
+            <div class="set-dots" id="setDots">${Array.from({ length: sets }, (_, i) => `<span class="set-dot"></span>`).join('')}</div>
+            <div class="caption" id="setLbl" style="margin:6px 0 10px">Set 1/${sets}</div>
             <div class="timer-ring" id="tring"><div class="inner"><span class="timer" id="tval">${e.hold || e.reps}</span><span class="hint" id="tlbl">${e.hold ? 'saniye tut' : 'tekrar'}</span></div></div>
-            <button class="btn btn-primary mt16" id="tstart" style="max-width:200px;margin-left:auto;margin-right:auto"><i class="ti ti-player-play"></i> Başlat</button>
+            <button class="btn btn-primary mt16" id="tstart" style="max-width:220px;margin-left:auto;margin-right:auto"><i class="ti ti-player-play"></i> Seti başlat</button>
           </div>
-          ${e.verify
-            ? `<button class="btn btn-accent mt16" data-act="goverify" data-eid="${e.id}"><i class="ti ti-shield-check"></i> Kamerayla kanıtla</button>`
-            : `<button class="btn btn-primary mt16" data-act="complete-ex" data-eid="${e.id}"><i class="ti ti-check"></i> Tamamladım</button>`}
+          <div id="finishBox" hidden>
+            <p class="caption center" style="margin:14px 0 8px"><i class="ti ti-circle-check" style="color:var(--teal-600);vertical-align:-2px"></i> Setleri bitirdin. Bu seansı kanıtla:</p>
+            <button class="btn btn-accent" data-act="goverify" data-eid="${e.id}"><i class="ti ti-shield-check"></i> Kamerayla kanıtla</button>
+            <button class="btn btn-secondary mt8" data-act="complete-noverify" data-eid="${e.id}"><i class="ti ti-check"></i> Kanıtsız tamamla</button>
+            <p class="hint center mt8">Kanıtlamadan tamamlarsan kaydında “kanıtsız” olarak görünür.</p>
+          </div>
           <button class="btn btn-secondary mt8" data-act="couldnt" data-eid="${e.id}"><i class="ti ti-mood-sad"></i> Yapamadım</button>
         </section>`;
     },
@@ -339,7 +374,7 @@
       return `${appbar('Kanıtla', { back: true })}
         <section class="screen">
           <p class="muted" style="margin-bottom:4px"><i class="ti ti-shield-check" style="color:var(--teal-600);vertical-align:-2px"></i> ${esc(cueFor(e.demo))}</p>
-          <p class="hint" style="margin-bottom:12px">Hedef: <b>${esc(targetText(e))}</b> — kamera sayacak.</p>
+          <p class="hint" style="margin-bottom:12px">Hedef: <b>${esc(targetText(e))}</b>, kamera sayacak.</p>
           <div class="cam-stage" id="camStage">
             <div class="cam-live"><span class="dot"></span> CANLI</div>
             <div class="ring cam-prog" id="camProg" style="--p:0"><span id="camPct">0%</span></div>
@@ -347,7 +382,7 @@
             <canvas id="camCanvas"></canvas>
             <div class="cam-hint" id="camHint">Kamera başlatılıyor…</div>
           </div>
-          <p class="hint center mt16"><i class="ti ti-lock" style="vertical-align:-2px"></i> Görüntü cihazından çıkmaz — analiz telefonda yapılır. Sadece sonuç hekime gönderilir.</p>
+          <p class="hint center mt16"><i class="ti ti-lock" style="vertical-align:-2px"></i> Görüntü cihazından çıkmaz, analiz telefonda yapılır. Sadece sonuç hekime gönderilir.</p>
           <button class="btn btn-secondary mt8" data-act="sim-verify" data-eid="${e.id}"><i class="ti ti-device-mobile-check"></i> Kamerasız doğrula (demo)</button>
         </section>`;
     },
@@ -365,7 +400,7 @@
           </div>
           <button class="btn btn-accent mt16" data-go="p_achievement"><i class="ti ti-award"></i> Başarı kartını gör & paylaş</button>
           <h3 style="margin:18px 0 8px">Haftalık hedef</h3>
-          <div class="card"><div class="row between" style="margin-bottom:8px"><span class="muted">Bu haftaki egzersizler</span><span style="font-weight:600">%${goalPct}</span></div><div class="bar"><i style="width:${goalPct}%"></i></div>${goalPct >= 100 ? '<div class="badge coral mt8"><i class="ti ti-gift"></i> Hedef tamam — ödül açıldı!</div>' : ''}</div>
+          <div class="card"><div class="row between" style="margin-bottom:8px"><span class="muted">Bu haftaki egzersizler</span><span style="font-weight:600">%${goalPct}</span></div><div class="bar"><i style="width:${goalPct}%"></i></div>${goalPct >= 100 ? '<div class="badge coral mt8"><i class="ti ti-gift"></i> Hedef tamam, ödül açıldı!</div>' : ''}</div>
           <h3 style="margin:18px 0 8px">İyileşme yolun · diz</h3>
           <div class="card"><div class="row between">${stages.map((s, i) => `<div class="center" style="flex:1"><div style="width:30px;height:30px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;background:${i < p.journeyStage ? 'var(--teal-600)' : i === p.journeyStage ? 'var(--coral-500)' : 'var(--bg)'};color:${i <= p.journeyStage ? '#fff' : 'var(--ink-300)'};font-size:13px;font-weight:600">${i < p.journeyStage ? '<i class="ti ti-check"></i>' : i + 1}</div><div class="hint" style="font-size:10px;margin-top:4px">${s}</div></div>`).join('')}</div></div>
           <h3 style="margin:18px 0 8px">Ödüller</h3>
@@ -393,7 +428,7 @@
           </div>
           <button class="btn btn-accent mt16" data-act="share-card"><i class="ti ti-share"></i> Paylaş</button>
           <button class="btn btn-secondary mt8" data-act="download-card"><i class="ti ti-download"></i> Görseli indir</button>
-          <p class="hint center mt16">Kartta hastalık adı yok — istediğin yerde paylaşabilirsin.</p>
+          <p class="hint center mt16">Kartta hastalık adı yok, istediğin yerde paylaşabilirsin.</p>
         </section>`;
     },
 
@@ -410,6 +445,27 @@
         </section>`;
     },
 
+    p_history() {
+      const p = S.get().patients[0];
+      const byDate = {};
+      (p.sessions || []).forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
+      const dates = Object.keys(byDate).sort().reverse();
+      const exName = (id) => { const e = p.program.find(x => x.id === id); return e ? e.name : 'Hareket'; };
+      const fmtDate = (iso) => { const d = new Date(iso + 'T00:00'); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${DAYS_SHORT[d.getDay()]}`; };
+      const dayCard = (date) => {
+        const g = {}; byDate[date].forEach(s => { (g[s.exId] = g[s.exId] || []).push(s); });
+        const rows = Object.keys(g).map(exId => {
+          const arr = g[exId], v = arr.filter(s => s.verified).length, nv = arr.length - v;
+          return `<div class="row between" style="padding:8px 0;border-top:1px solid var(--line)"><span style="flex:1">${esc(exName(exId))} <span class="hint">· ${arr.length} kez</span></span>${v ? `<span class="badge teal"><i class="ti ti-shield-check"></i> ${v} kanıtlı</span>` : ''}${nv ? `<span class="badge warn" style="margin-left:6px"><i class="ti ti-shield-off"></i> ${nv} kanıtsız</span>` : ''}</div>`;
+        }).join('');
+        return `<div class="card"><div class="row between" style="margin-bottom:2px"><h3 style="font-size:16px">${date === todayStr() ? 'Bugün' : fmtDate(date)}</h3><span class="hint">${byDate[date].length} seans</span></div>${rows}</div>`;
+      };
+      return `${appbar('Egzersiz geçmişim', { back: true })}
+        <section class="screen">
+          <p class="hint" style="margin-bottom:12px">Her günün kaydı; kanıtlı ve kanıtsız seanslar burada tutulur.</p>
+          ${dates.length ? dates.map(dayCard).join('') : '<div class="card center" style="padding:32px 20px"><i class="ti ti-history" style="font-size:38px;color:var(--ink-300)"></i><p class="muted mt16">Henüz kayıt yok. İlk seansını yap, burada görünsün.</p></div>'}
+        </section>`;
+    },
     p_profile() { return profile('patient'); },
   };
 
@@ -423,8 +479,9 @@
     const sub = role === 'doctor' ? ('Fizyoterapist' + (st.doctor.license ? ' · ' + esc(st.doctor.license) : '')) : 'Hasta';
     return `${appbar('Profil')}<section class="screen">
       <div class="row" style="margin-bottom:18px"><span class="avatar lg">${esc(inits)}</span><div><div style="font-weight:600;font-size:18px">${esc(name)}</div><div class="hint">${sub}${st.cloud ? '' : ' · demo'}</div></div></div>
-      ${role === 'doctor' && st.cloud ? `<div class="card"><div class="caption">Fizyoterapist kodun</div><div class="row between" style="margin-top:6px"><div style="font-weight:700;letter-spacing:3px;font-size:22px;color:var(--teal-700)">${esc(st.code || '—')}</div><div class="row gap8"><button class="btn sm btn-secondary" data-act="copy-code" data-code="${esc(st.code || '')}"><i class="ti ti-copy"></i> Kopyala</button><button class="btn sm btn-secondary" data-act="new-patient"><i class="ti ti-user-plus"></i> Davet</button></div></div></div>` : ''}
+      ${role === 'doctor' && st.cloud ? `<div class="card"><div class="caption">Fizyoterapist kodun</div><div class="row between" style="margin-top:6px"><div style="font-weight:700;letter-spacing:3px;font-size:22px;color:var(--teal-700)">${esc(st.code || '-')}</div><div class="row gap8"><button class="btn sm btn-secondary" data-act="copy-code" data-code="${esc(st.code || '')}"><i class="ti ti-copy"></i> Kopyala</button><button class="btn sm btn-secondary" data-act="new-patient"><i class="ti ti-user-plus"></i> Davet</button></div></div></div>` : ''}
       ${role === 'patient' ? `<div class="card row between"><div><div style="font-weight:600">Oyunlaştırma</div><div class="hint">Puan, seri ve ödülleri göster</div></div><button class="chip ${st.settings.gamify ? 'on' : ''}" data-act="toggle-gamify">${st.settings.gamify ? 'Açık' : 'Kapalı'}</button></div>` : ''}
+      ${role === 'doctor' ? `<button class="list-item card" data-go="d_appts" style="border-radius:var(--r-lg)"><i class="ti ti-calendar" style="color:var(--teal-600);font-size:22px"></i><span style="flex:1"><span style="font-weight:600">Randevular</span><br><span class="hint">Randevu bağlantın ve uygun saatlerin</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>` : ''}
       <div class="card row between"><div><div style="font-weight:600">Büyük yazı</div><div class="hint">Daha büyük metin ve butonlar</div></div><button class="chip ${uiGet('bigText') ? 'on' : ''}" data-act="toggle-bigtext">${uiGet('bigText') ? 'Açık' : 'Kapalı'}</button></div>
       <div class="card flush mt16">
         <a class="list-item" href="privacy.html" target="_blank" style="text-decoration:none"><i class="ti ti-lock" style="color:var(--ink-500)"></i><span style="flex:1">Gizlilik ve güvenlik</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
@@ -492,16 +549,27 @@
   /* ---- exercise timer ---- */
   let timerInt = null;
   function wireTimer(e) {
-    const btn = $('#tstart'), val = $('#tval'), ring = $('#tring'), lbl = $('#tlbl');
+    const btn = $('#tstart'), val = $('#tval'), ring = $('#tring'), lbl = $('#tlbl'), setLbl = $('#setLbl'), dots = $('#setDots'), finishBox = $('#finishBox');
     if (!btn) return;
-    const total = e.hold || e.reps;
-    let running = false, t = total;
+    const sets = e.sets || 1, total = e.hold || e.reps;
+    let curSet = 1, running = false, t = total;
+    const paintDots = (n) => $$('.set-dot', dots).forEach((dn, i) => dn.classList.toggle('on', i < n));
     btn.onclick = () => {
       if (running) { clearInterval(timerInt); running = false; btn.innerHTML = '<i class="ti ti-player-play"></i> Devam'; return; }
       running = true; btn.innerHTML = '<i class="ti ti-player-pause"></i> Duraklat';
       timerInt = setInterval(() => {
         t--; val.textContent = t; ring.style.setProperty('--p', (1 - t / total) * 100);
-        if (t <= 0) { clearInterval(timerInt); running = false; t = total; val.textContent = total; ring.style.setProperty('--p', 100); lbl.textContent = 'tamam!'; btn.innerHTML = '<i class="ti ti-refresh"></i> Tekrar'; toast('Set tamamlandı'); }
+        if (t <= 0) {
+          clearInterval(timerInt); running = false; ring.style.setProperty('--p', 100); paintDots(curSet);
+          if (curSet >= sets) {                                  // all sets done → verify this session
+            val.textContent = '✓'; lbl.textContent = 'bitti'; setLbl.textContent = 'Tüm setler tamam ✓';
+            btn.hidden = true; if (finishBox) finishBox.hidden = false; toast('Setler bitti, şimdi kanıtla');
+          } else {                                               // next set
+            curSet++; t = total; val.textContent = total; ring.style.setProperty('--p', 0);
+            setLbl.textContent = 'Set ' + curSet + '/' + sets; lbl.textContent = e.hold ? 'saniye tut' : 'tekrar';
+            btn.innerHTML = '<i class="ti ti-player-play"></i> Set ' + curSet + ' başlat'; toast('Set ' + (curSet - 1) + ' tamam, biraz dinlen');
+          }
+        }
       }, e.hold ? 1000 : 1300);
     };
   }
@@ -523,7 +591,7 @@
       video.srcObject = camStream; await video.play().catch(() => {});
       ok = true; hint.textContent = 'Vücudun kameraya tam görünsün';
     } catch (err) {
-      hint.textContent = 'Kamera açılamadı — "Kamerasız doğrula" ile devam et.';
+      hint.textContent = 'Kamera açılamadı, "Kamerasız doğrula" ile devam et.';
       return;
     }
     try {
@@ -535,18 +603,65 @@
       });
       runPose(e, video, canvas, hint);
     } catch (err) {
-      hint.textContent = 'Hareket algılama yüklenemedi — "Kamerasız doğrula" ile devam et.';
+      hint.textContent = 'Hareket algılama yüklenemedi, "Kamerasız doğrula" ile devam et.';
     }
   }
+  /* Movement-aware verification: each exercise maps to a body-signal (which joint
+     moves, in which axis), normalized by torso length so it's distance-invariant.
+     A short calibration captures the resting pose, then reps are counted with
+     hysteresis (must return to rest before the next rep) and holds are validated
+     for the prescribed seconds with a stability check. */
+  const METRIC_BY_DEMO = {
+    squat: 'hipVert', wallsquat: 'hipVert', lunge: 'hipVert', calfraise: 'hipVert',
+    marching: 'kneeAlt', hipabduction: 'legAbd',
+    bridge: 'hipBridge', legraise: 'legLift', clamshell: 'legLift', heelslide: 'legLift', sidelegraise: 'legLift',
+    kneeextension: 'kneeExt',
+    shoulder: 'armRaise', pendulum: 'armRaise', armraise: 'armRaise', shrug: 'shrug',
+    neckTilt: 'headMove', neckRotation: 'headMove',
+    balance: 'hold', generic: 'hold', catcow: 'motion', birddog: 'motion'
+  };
+  const THRESH = { hipVert: [.15, .06], hipBridge: [.12, .05], kneeAlt: [.14, .06], legLift: [.14, .06], legAbd: [.12, .05], armRaise: [.45, .2], shrug: [.045, .02], kneeExt: [.18, .07], headMove: [.12, .05], motion: [.7, .25] };
+  function metricFor(e) { return e.metric || METRIC_BY_DEMO[e.demo] || (((e.reps || 1) > 1) ? 'motion' : 'hold'); }
+
   function runPose(e, video, canvas, hint) {
     const ctx = canvas.getContext('2d');
     const conns = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]];
-    const repMode = (e.reps || 1) > 1;          // count actual reps vs. validate a hold
+    const metric = metricFor(e);
     const targetReps = e.reps || 10, targetSec = e.hold || 5;
-    let baseline = null, state = 'up', reps = 0, heldSec = 0, lastT = performance.now();
+    const hold = ((e.reps || 1) <= 1) || metric === 'hold';   // hold-validation vs rep-counting
+    const [enterThr, exitThr] = THRESH[metric] || [.15, .06];
     const prog = $('#camProg'), pctEl = $('#camPct');
     const setProg = (frac, label) => { if (prog) prog.style.setProperty('--p', Math.min(100, Math.round(frac * 100))); if (pctEl) pctEl.textContent = label; };
-    setProg(0, repMode ? '0/' + targetReps : '0 sn');
+    setProg(0, hold ? '0 sn' : '0/' + targetReps);
+
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    const torsoLen = (lm) => { const s = mid(lm[11], lm[12]), h = mid(lm[23], lm[24]); return Math.hypot(s.x - h.x, s.y - h.y) || 0.001; };
+    const keyPts = (lm) => [lm[11], lm[12], lm[15], lm[16], lm[23], lm[24], lm[25], lm[26]];
+
+    let base = null, calib = [], calibStart = performance.now();
+    let smoothed = 0, repState = 'ready', reps = 0, heldSec = 0, lastT = performance.now(), prevPts = null;
+
+    const motionSpeed = (lm, dt, L) => {
+      if (!prevPts) return 0; const cur = keyPts(lm); let s = 0, n = 0;
+      for (let i = 0; i < cur.length; i++) if (cur[i] && prevPts[i]) { s += Math.hypot(cur[i].x - prevPts[i].x, cur[i].y - prevPts[i].y); n++; }
+      return n ? (s / n) / L / Math.max(dt, 0.016) : 0;
+    };
+    const rawSignal = (lm) => {
+      const L = torsoLen(lm), s = mid(lm[11], lm[12]), h = mid(lm[23], lm[24]), b = base;
+      switch (metric) {
+        case 'hipVert': return (h.y - b.hipY) / L;                         // hips lower
+        case 'hipBridge': return (b.hipY - h.y) / L;                       // hips rise
+        case 'kneeAlt': return Math.max(b.kLY - lm[25].y, b.kRY - lm[26].y) / L;  // a knee lifts
+        case 'legLift': return Math.max(b.kLY - lm[25].y, b.kRY - lm[26].y, b.aLY - lm[27].y, b.aRY - lm[28].y) / L;
+        case 'legAbd': return ((Math.abs(lm[28].x - h.x) + Math.abs(lm[27].x - h.x)) - b.spread) / L;
+        case 'armRaise': return ((s.y - Math.min(lm[15].y, lm[16].y)) / L) - b.armBase;  // wrist above shoulder
+        case 'shrug': return (b.shY - s.y) / L;
+        case 'kneeExt': return (((lm[25].y + lm[26].y) / 2 - Math.min(lm[27].y, lm[28].y)) / L) - b.kneeExt;
+        case 'headMove': return Math.max(Math.abs(lm[0].x - b.noseX), Math.abs(lm[0].y - b.noseY)) / L;
+        default: return 0;
+      }
+    };
+
     const loop = () => {
       if (camStop || !camLandmarker || !video.videoWidth) { if (!camStop) camRAF = requestAnimationFrame(loop); return; }
       canvas.width = video.videoWidth; canvas.height = video.videoHeight;
@@ -554,43 +669,66 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
       const lm = res.landmarks && res.landmarks[0];
-      if (!lm) { hint.textContent = 'Vücudun kameraya görünsün'; if (!repMode) heldSec = Math.max(0, heldSec - dt); camRAF = requestAnimationFrame(loop); return; }
+      if (!lm) { hint.textContent = 'Vücudun kameraya görünsün'; if (hold) heldSec = Math.max(0, heldSec - dt * 1.5); prevPts = null; camRAF = requestAnimationFrame(loop); return; }
       ctx.strokeStyle = css('--teal-500') || '#149A7E'; ctx.lineWidth = 4; ctx.lineCap = 'round';
       conns.forEach(([a, b]) => { if (lm[a] && lm[b]) { ctx.beginPath(); ctx.moveTo(lm[a].x * canvas.width, lm[a].y * canvas.height); ctx.lineTo(lm[b].x * canvas.width, lm[b].y * canvas.height); ctx.stroke(); } });
       ctx.fillStyle = css('--teal-500') || '#149A7E';
       lm.forEach(pt => { ctx.beginPath(); ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 5, 0, 7); ctx.fill(); });
       const visible = lm.filter(p => (p.visibility ?? 1) > 0.5).length;
-      if (visible < 18) { hint.textContent = 'Tüm vücudun kameraya görünsün'; camRAF = requestAnimationFrame(loop); return; }
-      if (repMode) {
-        // count reps from vertical oscillation of the hips (down→up = 1 rep)
-        const hipY = (lm[23].y + lm[24].y) / 2;
-        if (baseline === null) baseline = hipY;
-        baseline = baseline * 0.98 + hipY * 0.02; // adapt to the standing position
-        const delta = hipY - baseline;            // + = lower (e.g. squatting)
-        if (state === 'up' && delta > 0.05) { state = 'down'; hint.textContent = 'Şimdi kalk ⬆'; }
-        else if (state === 'down' && delta < 0.02) { state = 'up'; reps++; setProg(reps / targetReps, reps + '/' + targetReps); hint.textContent = 'Güzel! ' + reps + '/' + targetReps; if (reps >= targetReps) { verifySuccess(e); return; } }
-        else if (state === 'up' && !reps) hint.textContent = 'Hareketi yapmaya başla';
-      } else {
-        // validate a steady hold for the prescribed seconds
-        heldSec = Math.min(targetSec, heldSec + dt);
+      if (visible < 16) { hint.textContent = 'Tüm vücudun kameraya sığsın'; prevPts = null; camRAF = requestAnimationFrame(loop); return; }
+      const L = torsoLen(lm), s = mid(lm[11], lm[12]), h = mid(lm[23], lm[24]);
+
+      // calibration: ~1.1s of clean frames → resting baseline
+      if (!base) {
+        calib.push({ hipY: h.y, shY: s.y, kLY: lm[25].y, kRY: lm[26].y, aLY: lm[27].y, aRY: lm[28].y,
+          spread: Math.abs(lm[28].x - h.x) + Math.abs(lm[27].x - h.x), armBase: (s.y - Math.min(lm[15].y, lm[16].y)) / L,
+          kneeExt: ((lm[25].y + lm[26].y) / 2 - Math.min(lm[27].y, lm[28].y)) / L, noseX: lm[0].x, noseY: lm[0].y });
+        setProg((now - calibStart) / 1100, 'hazır…'); hint.textContent = 'Sabit dur, kalibre ediliyor…';
+        if (now - calibStart > 1100 && calib.length > 8) {
+          base = {}; for (const k of ['hipY', 'shY', 'kLY', 'kRY', 'aLY', 'aRY', 'spread', 'armBase', 'kneeExt', 'noseX', 'noseY']) base[k] = calib.reduce((a, c) => a + c[k], 0) / calib.length;
+          setProg(0, hold ? '0 sn' : '0/' + targetReps);
+        }
+        prevPts = keyPts(lm); camRAF = requestAnimationFrame(loop); return;
+      }
+
+      const speed = motionSpeed(lm, dt, L);                 // before prevPts update
+      const sig = (metric === 'motion') ? speed : Math.abs(rawSignal(lm));
+      smoothed = smoothed * 0.7 + sig * 0.3;
+      prevPts = keyPts(lm);
+
+      if (hold) {
+        let ok;
+        if (e.demo === 'balance') ok = Math.abs(lm[27].y - lm[28].y) > 0.10 && speed < 0.9; // single-leg + steady
+        else ok = speed < 1.2;                                                              // holding still
+        if (ok) { heldSec = Math.min(targetSec, heldSec + dt); hint.textContent = e.demo === 'balance' ? 'Dengeni koru…' : 'Pozu koru…'; }
+        else { heldSec = Math.max(0, heldSec - dt * 1.2); hint.textContent = e.demo === 'balance' ? 'Tek ayak üstünde dur' : 'Pozisyonu al ve sabit kal'; }
         setProg(heldSec / targetSec, heldSec.toFixed(1) + ' sn');
-        hint.textContent = 'Pozu koru…';
         if (heldSec >= targetSec) { verifySuccess(e); return; }
+      } else {
+        if (repState === 'ready' && smoothed > enterThr) { repState = 'active'; hint.textContent = 'Güzel, şimdi başa dön'; }
+        else if (repState === 'active' && smoothed < exitThr) { repState = 'ready'; reps++; setProg(reps / targetReps, reps + '/' + targetReps); hint.textContent = reps + '/' + targetReps + ' ✓'; if (reps >= targetReps) { verifySuccess(e); return; } }
+        else if (repState === 'ready' && reps === 0) hint.textContent = 'Hareketi yapmaya başla';
       }
       camRAF = requestAnimationFrame(loop);
     };
     camRAF = requestAnimationFrame(loop);
   }
-  function verifySuccess(e) {
-    stopCamera();
+  // Record one completed session (one full run of the exercise), verified or not.
+  function recordSession(e, verified) {
     const st = S.get(); const p = st.patients[0];
-    const ex = p.program.find(x => x.id === e.id); if (ex) { ex.done = true; ex.verifiedAt = Date.now(); }
-    if (st.settings.gamify) { p.points += 30; }
+    p.sessions = p.sessions || [];
+    p.sessions.push({ exId: e.id, date: todayStr(), verified: !!verified, at: Date.now() });
+    if (st.settings.gamify) p.points += verified ? 30 : 15;
     if (S.isCloud()) {
-      window.FZ_API.logCompletion({ exercise_id: e.id, patient_id: p.id, verified: true }).catch(() => {});
+      window.FZ_API.logCompletion({ exercise_id: e.id, patient_id: p.id, verified: !!verified }).catch(() => {});
       if (st.settings.gamify) window.FZ_API.setGamification(p.id, { points: p.points }).catch(() => {});
     }
     S.save();
+  }
+  function verifySuccess(e) {
+    stopCamera();
+    const st = S.get();
+    recordSession(e, true);
     const stage = $('#camStage');
     if (stage) stage.insertAdjacentHTML('beforeend', `<div class="verify-ok"><i class="ti ti-circle-check"></i><div style="font-size:18px;font-weight:600">Doğrulandı!</div>${st.settings.gamify ? '<div class="badge" style="background:rgba(255,255,255,.2);color:#fff">+30 puan</div>' : ''}</div>`);
     setTimeout(() => { toast('Kanıt hekime gönderildi'); if (session) sessionAdvance(); else home(); }, 1500);
@@ -633,13 +771,14 @@
         <div class="field"><label>Set</label><input class="input" id="cfgSets" type="number" value="${pr.sets}" inputmode="numeric"></div>
         <div class="field"><label>Süre (sn)</label><input class="input" id="cfgHold" type="number" value="${pr.hold}" inputmode="numeric"></div>
       </div>
+      <div class="field"><label>Günde kaç kez (farklı zamanlarda)</label><input class="input" id="cfgFreq" type="number" min="1" value="1" inputmode="numeric"></div>
       <div class="field"><label>Not</label><textarea id="cfgNote">${esc(pr.note)}</textarea></div>
-      <div class="card row between" style="margin-bottom:14px"><div><div style="font-weight:600">Kamerayla kanıt iste</div><div class="hint">Hasta hareketi kanıtlasın</div></div><button class="chip" id="cfgVerify" data-act="toggle-cfg-verify">Kapalı</button></div>
+      <div class="card row between" style="margin-bottom:14px"><div><div style="font-weight:600">Kamerayla kanıt iste</div><div class="hint">Hasta her seansı bir kez kanıtlasın</div></div><button class="chip" id="cfgVerify" data-act="toggle-cfg-verify">Kapalı</button></div>
       <button class="btn btn-primary" data-act="add-preset" data-pid="${pr.id}" data-id="${pid}"><i class="ti ti-plus"></i> Programa ekle</button>`;
   }
   function couldntSheet(eid) {
     const reasons = ['Ağrı oldu', 'Çok yoruldum', 'Hareketi anlamadım', 'Zamanım olmadı'];
-    return `<h3 style="margin-bottom:4px">Nasıl geçti?</h3><p class="hint" style="margin-bottom:14px">Hekimine ilet — sorun değil.</p>
+    return `<h3 style="margin-bottom:4px">Nasıl geçti?</h3><p class="hint" style="margin-bottom:14px">Hekimine ilet, sorun değil.</p>
       ${reasons.map((r) => `<button class="chip" data-act="reason-pick" data-reason="${esc(r)}" style="display:block;width:100%;text-align:left;margin-bottom:8px">${r}</button>`).join('')}
       <div class="field" style="margin-top:10px"><label>Ağrı seviyen (0 = yok, 10 = çok)</label>
         <div class="row gap8" style="flex-wrap:wrap" id="painRow">${Array.from({ length: 11 }, (_, n) => `<button class="chip" data-act="pain-pick" data-pain="${n}" style="min-width:38px;text-align:center">${n}</button>`).join('')}</div></div>
@@ -661,7 +800,7 @@
       <div class="field"><label>Ton</label><div class="row gap8">${tones.map(([v, l]) => `<button class="chip ${p.notif.tone === v ? 'on' : ''}" data-act="ntone" data-id="${p.id}" data-v="${v}">${l}</button>`).join('')}</div></div>
       <div class="field"><label>Hatırlatma saatleri</label><div class="row gap8" style="flex-wrap:wrap">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ntime" data-id="${p.id}" data-t="${t}">${t}</button>`).join('')}</div></div>
       <div class="divider"></div>
-      <div class="field"><label><i class="ti ti-robot" style="vertical-align:-2px"></i> Otomatik takip — kaç gün egzersiz yapmazsa</label><div class="row gap8">${[1, 2, 3].map(dn => `<button class="chip ${p.notif.escalateDays === dn ? 'on' : ''}" data-act="nesc" data-id="${p.id}" data-d="${dn}">${dn} gün</button>`).join('')}</div></div>
+      <div class="field"><label><i class="ti ti-robot" style="vertical-align:-2px"></i> Otomatik takip, kaç gün egzersiz yapmazsa</label><div class="row gap8">${[1, 2, 3].map(dn => `<button class="chip ${p.notif.escalateDays === dn ? 'on' : ''}" data-act="nesc" data-id="${p.id}" data-d="${dn}">${dn} gün</button>`).join('')}</div></div>
       <div class="field"><label>Otomatik aksiyon</label><div class="row gap8" style="flex-wrap:wrap">${ACTIONS.map(([a, l, ic]) => `<button class="chip ${p.notif.autoActions.includes(a) ? 'on' : ''}" data-act="nact" data-id="${p.id}" data-a="${a}"><i class="ti ${ic}"></i> ${l}</button>`).join('')}</div></div>
       <div class="card" style="background:var(--teal-50);border-color:var(--teal-100);margin-bottom:14px"><p style="color:var(--teal-700);font-size:14px;margin:0">${autoSummary(p.name.split(' ')[0], p.notif.escalateDays, p.notif.autoActions)}</p></div>
       <button class="btn btn-primary" data-act="close-sheet"><i class="ti ti-check"></i> Tamam</button>`;
@@ -702,8 +841,8 @@
   }
 
   function inviteSheet(code) {
-    return `<h3 style="margin-bottom:4px">Hasta davet et</h3><p class="hint" style="margin-bottom:14px">Hastan üye olurken bu kodu girsin — hesabı otomatik sana bağlanır.</p>
-      <div class="card center" style="background:var(--teal-50);border-color:var(--teal-100)"><div class="caption" style="color:var(--teal-600)">Fizyoterapist kodun</div><div style="font-size:34px;font-weight:700;letter-spacing:5px;color:var(--teal-700);margin-top:4px" id="inviteCode">${esc(code || '—')}</div></div>
+    return `<h3 style="margin-bottom:4px">Hasta davet et</h3><p class="hint" style="margin-bottom:14px">Hastan üye olurken bu kodu girsin, hesabı otomatik sana bağlanır.</p>
+      <div class="card center" style="background:var(--teal-50);border-color:var(--teal-100)"><div class="caption" style="color:var(--teal-600)">Fizyoterapist kodun</div><div style="font-size:34px;font-weight:700;letter-spacing:5px;color:var(--teal-700);margin-top:4px" id="inviteCode">${esc(code || '-')}</div></div>
       <button class="btn btn-secondary mt8" data-act="copy-code" data-code="${esc(code || '')}"><i class="ti ti-copy"></i> Kodu kopyala</button>
       <button class="btn btn-primary mt8" data-act="close-sheet"><i class="ti ti-check"></i> Tamam</button>`;
   }
@@ -718,9 +857,10 @@
     const v = $('#rvCam', document); if (!v) return;
     camStop = false;
     try { camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); v.srcObject = camStream; await v.play().catch(() => {}); const h = $('#rvHint', document); if (h) h.textContent = 'Hazır olunca kaydı başlat'; }
-    catch (e) { const h = $('#rvHint', document); if (h) h.textContent = 'Kamera yok — demoda yine kaydedebilirsin'; }
+    catch (e) { const h = $('#rvHint', document); if (h) h.textContent = 'Kamera yok, demoda yine kaydedebilirsin'; }
   }
   const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  const DAYS_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
   function apptSheet(p) {
     return `<h3 style="margin-bottom:4px">Randevu</h3><p class="hint" style="margin-bottom:14px">${esc(p.name)} · sonraki randevu</p>
       <div class="field"><label for="apDate">Tarih</label><input class="input" id="apDate" type="date"></div>
@@ -733,8 +873,8 @@
       <button class="btn btn-primary" data-act="send-note" data-id="${p.id}"><i class="ti ti-send"></i> Gönder</button>`;
   }
   function clinicalSheet(p) {
-    return `<h3 style="margin-bottom:12px">${esc(p.name)} — bilgiler</h3>
-      <div class="field"><label for="clCond">Durum / bölge</label><input class="input" id="clCond" value="${esc(p.condition === '—' ? '' : p.condition)}" placeholder="Örn. Sol diz — menisküs"></div>
+    return `<h3 style="margin-bottom:12px">${esc(p.name)}, bilgiler</h3>
+      <div class="field"><label for="clCond">Durum / bölge</label><input class="input" id="clCond" value="${esc(p.condition === '-' ? '' : p.condition)}" placeholder="Örn. Sol diz, menisküs"></div>
       <div class="field"><label for="clWeek">Tedavi haftası</label><input class="input" id="clWeek" type="number" min="1" value="${p.week}"></div>
       <button class="btn btn-primary" data-act="save-clinical" data-id="${p.id}"><i class="ti ti-check"></i> Kaydet</button>`;
   }
@@ -744,6 +884,32 @@
       <div class="row gap8" style="flex-wrap:wrap;margin-bottom:14px">${TIMES.map(t => `<button class="chip ${p.notif.times.includes(t) ? 'on' : ''}" data-act="ptime" data-t="${t}">${t}</button>`).join('')}</div>
       ${granted ? '<div class="card" style="background:var(--teal-50);border-color:var(--teal-100);margin-bottom:12px"><p style="color:var(--teal-700);font-size:14px;margin:0"><i class="ti ti-bell-check"></i> Bildirimler açık.</p></div>' : '<button class="btn btn-secondary" data-act="enable-notif" style="margin-bottom:12px"><i class="ti ti-bell"></i> Telefon bildirimine izin ver</button>'}
       <button class="btn btn-primary" data-act="close-sheet"><i class="ti ti-check"></i> Kaydet</button>`;
+  }
+
+  function editSheet(pid, ex) {
+    return `<h3 style="margin-bottom:4px">Hareketi düzenle</h3><p class="hint" style="margin-bottom:14px">Hastana göre güncelle</p>
+      <div class="demo-stage sm" style="height:120px;margin-bottom:14px">${fzDemo(ex.demo)}</div>
+      <div class="field"><label>Hareket adı</label><input class="input" id="edName" value="${esc(ex.name)}"></div>
+      <div class="num-row">
+        <div class="field"><label>Tekrar</label><input class="input" id="edReps" type="number" value="${ex.reps}" inputmode="numeric"></div>
+        <div class="field"><label>Set</label><input class="input" id="edSets" type="number" value="${ex.sets}" inputmode="numeric"></div>
+        <div class="field"><label>Süre (sn)</label><input class="input" id="edHold" type="number" value="${ex.hold || 0}" inputmode="numeric"></div>
+      </div>
+      <div class="field"><label>Günde kaç kez (farklı zamanlarda)</label><input class="input" id="edFreq" type="number" min="1" value="${ex.freq || 1}" inputmode="numeric"></div>
+      <div class="field"><label>Not</label><textarea id="edNote">${esc(ex.note || '')}</textarea></div>
+      <div class="card row between" style="margin-bottom:14px"><div><div style="font-weight:600">Kamerayla kanıt iste</div><div class="hint">Hasta hareketi kanıtlasın</div></div><button class="chip ${ex.verify ? 'on' : ''}" id="cfgVerify" data-act="toggle-cfg-verify">${ex.verify ? 'Açık' : 'Kapalı'}</button></div>
+      <button class="btn btn-primary" data-act="save-ex" data-eid="${ex.id}" data-id="${pid}"><i class="ti ti-check"></i> Kaydet</button>`;
+  }
+  function slotPatientName(id) { const p = S.patient(id); return p ? p.name : 'Hasta'; }
+  function bookSheet(p) {
+    const st = S.get(); const url = st.doctor.bookingUrl;
+    if (url) return `<h3 style="margin-bottom:4px">Randevu al</h3><p class="hint" style="margin-bottom:14px">${esc(st.doctor.name)} kendi randevu sayfasını kullanıyor.</p>
+      <a class="btn btn-primary" href="${esc(url)}" target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Randevu sayfasını aç</a>
+      <button class="btn btn-secondary mt8" data-act="close-sheet">Kapat</button>`;
+    const open = (st.slots || []).filter(s => !s.bookedBy);
+    return `<h3 style="margin-bottom:4px">Uygun randevular</h3><p class="hint" style="margin-bottom:14px">Bir saat seç, randevun oluşsun.</p>
+      ${open.length ? open.map(s => `<button class="slot" data-act="book-slot" data-sid="${s.id}"><span><span style="font-weight:600">${esc(s.date)}</span><br><span class="hint">${esc(s.time)}</span></span><span class="badge teal"><i class="ti ti-check"></i> Seç</span></button>`).join('') : '<p class="hint">Şu an açık randevu yok. Fizyoterapistin yeni saatler ekleyince burada görünür.</p>'}
+      <button class="btn btn-secondary mt8" data-act="close-sheet">Kapat</button>`;
   }
 
   function wireRoleLicense() {
@@ -777,7 +943,7 @@
     if (act === 'demo-doctor') { S.startDemo('doctor'); return home(); }
     if (act === 'demo-patient') { S.startDemo('patient'); return home(); }
     if (act === 'dologin') return doLogin(t);
-    if (act === 'logout') { try { if (S.isCloud()) window.FZ_API.signOut(); } catch (e) {} S.logout(); stack = ['welcome']; return render(); }
+    if (act === 'logout') { try { if (S.isCloud()) { window.FZ_API.unsubscribeAll(); window.FZ_API.signOut(); } } catch (e) {} S.logout(); stack = ['welcome']; return render(); }
     if (act === 'reset') { S.reset(); stack = ['welcome']; toast('Sıfırlandı'); return render(); }
     if (act === 'toggle-gamify') { st.settings.gamify = !st.settings.gamify; if (S.isCloud()) window.FZ_API.setGamification(st.patients[0].id, { gamify_enabled: st.settings.gamify }).catch(() => {}); S.save(); return render(); }
     if (act === 'toggle-bigtext') { uiSet('bigText', !uiGet('bigText')); return render(); }
@@ -794,13 +960,38 @@
     if (act === 'reply-note') return openSheet(noteSheet(S.patient(d.id)));
     if (act === 'send-note') { const p = S.patient(d.id); p.note = ($('#docNote', document).value || '').trim(); if (S.isCloud()) window.FZ_API.setPatient(p.id, { note: p.note }).catch(() => {}); S.save(); closeSheet(); render(); return toast('Not gönderildi'); }
     if (act === 'edit-clinical') return openSheet(clinicalSheet(S.patient(d.id)));
-    if (act === 'save-clinical') { const p = S.patient(d.id); p.condition = ($('#clCond', document).value || '').trim() || '—'; p.week = +$('#clWeek', document).value || 1; if (S.isCloud()) window.FZ_API.setPatient(p.id, { condition: p.condition === '—' ? null : p.condition, week: p.week }).catch(() => {}); S.save(); closeSheet(); render(); return toast('Güncellendi'); }
+    if (act === 'save-clinical') { const p = S.patient(d.id); p.condition = ($('#clCond', document).value || '').trim() || '-'; p.week = +$('#clWeek', document).value || 1; if (S.isCloud()) window.FZ_API.setPatient(p.id, { condition: p.condition === '-' ? null : p.condition, week: p.week }).catch(() => {}); S.save(); closeSheet(); render(); return toast('Güncellendi'); }
     if (act === 'edit-appt') return openSheet(apptSheet(S.patient(d.id)));
     if (act === 'save-appt') {
       const dv = $('#apDate', document).value, tv = $('#apTime', document).value || '14:00';
       const p = S.patient(d.id);
       if (dv) { const dt = new Date(dv + 'T00:00'); p.nextAppt = `${dt.getDate()} ${MONTHS[dt.getMonth()]}, ${tv}`; if (S.isCloud()) window.FZ_API.setAppointment({ patient_id: p.id, at: new Date(dv + 'T' + tv).toISOString(), created_by: st.doctor.id }).catch(() => {}); }
       S.save(); closeSheet(); render(); return toast('Randevu güncellendi');
+    }
+
+    /* appointments — external booking link + internal slots */
+    if (act === 'set-booking-url') { const url = ($('#bkUrl', document).value || '').trim(); st.doctor.bookingUrl = url; if (S.isCloud()) window.FZ_API.setBookingUrl(url).catch(() => {}); S.save(); return toast('Bağlantı kaydedildi'); }
+    if (act === 'add-slot') {
+      const dv = $('#slDate', document).value, tv = $('#slTime', document).value || '10:00';
+      if (!dv) return toast('Önce tarih seç');
+      const dt = new Date(dv + 'T' + tv);
+      const label = `${dt.getDate()} ${MONTHS[dt.getMonth()]} ${DAYS_SHORT[dt.getDay()]}`;
+      if (S.isCloud()) { window.FZ_API.addSlot(dt.toISOString()).then(async () => { await refreshSlots(); render(); toast('Saat eklendi'); }).catch(() => toast('Eklenemedi')); }
+      else { st.slots.push({ id: 's' + Date.now(), date: label, time: tv, bookedBy: null }); S.save(); render(); toast('Saat eklendi'); }
+      return;
+    }
+    if (act === 'del-slot') {
+      if (S.isCloud()) { window.FZ_API.deleteSlot(d.sid).then(async () => { await refreshSlots(); render(); toast('Silindi'); }).catch(() => toast('Silinemedi')); }
+      else { st.slots = st.slots.filter(s => s.id !== d.sid); S.save(); render(); toast('Silindi'); }
+      return;
+    }
+    if (act === 'open-booking') return openSheet(bookSheet(st.patients[0]));
+    if (act === 'book-slot') {
+      const s = (st.slots || []).find(x => x.id === d.sid); const p = st.patients[0]; if (!s) return;
+      closeSheet();
+      if (S.isCloud()) { window.FZ_API.bookSlot(d.sid).then(async () => { await refreshSlots(); p.nextAppt = s.date + ', ' + s.time; render(); toast('Randevu alındı ✓'); }).catch(() => toast('Alınamadı')); }
+      else { s.bookedBy = p.id; p.nextAppt = s.date + ', ' + s.time; S.save(); render(); toast('Randevu alındı ✓'); }
+      return;
     }
     if (act === 'build') return go('d_build', { id: d.id });
     if (act === 'record-own') { openSheet(recordSheet(d.id)); startPreview(); return; }
@@ -816,9 +1007,9 @@
         stopCamera();
         if (S.isCloud()) {
           closeSheet();
-          window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, note: '', verify_text: null, created_by: st.doctor.id })
+          window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, freq: 1, note: '', verify_text: null, created_by: st.doctor.id })
             .then(async () => { await refreshProgram(p.id); render(); toast('Hareket kaydedildi ✓'); }).catch(() => toast('Kaydedilemedi'));
-        } else { p.program.push({ id: 'e' + Date.now(), ...ex, video: true, note: '', verify: null, done: false }); S.save(); closeSheet(); render(); toast('Video kaydedildi ✓'); }
+        } else { p.program.push({ id: 'e' + Date.now(), ...ex, freq: 1, video: true, note: '', verify: null }); S.save(); closeSheet(); render(); toast('Video kaydedildi ✓'); }
       }, 800);
       return;
     }
@@ -839,14 +1030,14 @@
       else { try { const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Kod kopyalandı: ' + code); } catch { toast('Kod: ' + code); } }
       return;
     }
-    if (act === 'msg-doctor') return toast('Mesajlaşma yakında — şimdilik fizyoterapistin bildirim alır');
+    if (act === 'msg-doctor') return toast('Mesajlaşma yakında, şimdilik fizyoterapistin bildirim alır');
     if (act === 'share-card') return shareCard(false);
     if (act === 'download-card') return shareCard(true);
     if (act === 'reminder') return openSheet(reminderSheet(st.patients[0]));
     if (act === 'enable-notif') {
       if (!('Notification' in window)) return toast('Bu cihaz bildirimi desteklemiyor');
       Notification.requestPermission().then(perm => {
-        if (perm === 'granted') { try { new Notification('Fizyon', { body: 'Hatırlatmalar açık — egzersiz zamanında haber vereceğiz.', icon: 'assets/logo.svg' }); } catch (e) {} toast('Bildirimler açıldı'); openSheet(reminderSheet(st.patients[0])); }
+        if (perm === 'granted') { try { new Notification('Fizyon', { body: 'Hatırlatmalar açık, egzersiz zamanında haber vereceğiz.', icon: 'assets/logo.svg' }); } catch (e) {} subscribePush(); toast('Bildirimler açıldı'); openSheet(reminderSheet(st.patients[0])); }
         else toast('Bildirim izni verilmedi');
       }).catch(() => toast('İzin alınamadı'));
       return;
@@ -858,12 +1049,12 @@
     if (act === 'open-protocols') return openSheet(protocolSheet(d.id));
     if (act === 'apply-protocol') {
       const pt = st.protocols.find(x => x.id === d.pid); const p = S.patient(d.id);
-      const exs = pt.items.map(it => { const pr = st.presets.find(x => x.id === it.preset); return { name: pr.name, demo: pr.demo, reps: pr.reps, sets: pr.sets, hold: pr.hold, note: pr.note, verify: it.verify ? 'Hareketi yap ve kameraya göster' : null }; });
+      const exs = pt.items.map(it => { const pr = st.presets.find(x => x.id === it.preset); return { name: pr.name, demo: pr.demo, reps: pr.reps, sets: pr.sets, hold: pr.hold, freq: pr.freq || 1, note: pr.note, verify: it.verify ? 'Hareketi yap ve kameraya göster' : null }; });
       closeSheet();
       if (S.isCloud()) {
-        Promise.all(exs.map(ex => window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, note: ex.note, verify_text: ex.verify, created_by: st.doctor.id })))
+        Promise.all(exs.map(ex => window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, freq: ex.freq, note: ex.note, verify_text: ex.verify, created_by: st.doctor.id })))
           .then(async () => { await refreshProgram(p.id); render(); toast(pt.name + ' uygulandı'); }).catch(() => toast('Uygulanamadı'));
-      } else { exs.forEach((ex, i) => p.program.push({ id: 'e' + (Date.now() + i), ...ex, done: false })); S.save(); render(); toast(pt.name + ' uygulandı'); }
+      } else { exs.forEach((ex, i) => p.program.push({ id: 'e' + (Date.now() + i), ...ex })); S.save(); render(); toast(pt.name + ' uygulandı'); }
       return;
     }
     if (act === 'open-library') { sheetCat = 'all'; return openSheet(librarySheet(d.id)); }
@@ -872,12 +1063,12 @@
     if (act === 'toggle-cfg-verify') { cfgVerify = !cfgVerify; t.textContent = cfgVerify ? 'Açık' : 'Kapalı'; t.classList.toggle('on', cfgVerify); return; }
     if (act === 'add-preset') {
       const pr = st.presets.find(x => x.id === d.pid); const p = S.patient(d.id);
-      const ex = { name: pr.name, demo: pr.demo, reps: +$('#cfgReps', document).value || pr.reps, sets: +$('#cfgSets', document).value || pr.sets, hold: +$('#cfgHold', document).value || 0, note: $('#cfgNote', document).value.trim(), verify: cfgVerify ? 'Hareketi yap ve kameraya göster' : null };
+      const ex = { name: pr.name, demo: pr.demo, reps: +$('#cfgReps', document).value || pr.reps, sets: +$('#cfgSets', document).value || pr.sets, hold: +$('#cfgHold', document).value || 0, freq: Math.max(1, +$('#cfgFreq', document).value || 1), note: $('#cfgNote', document).value.trim(), verify: cfgVerify ? 'Hareketi yap ve kameraya göster' : null };
       if (S.isCloud()) {
         closeSheet();
-        window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, note: ex.note, verify_text: ex.verify, created_by: st.doctor.id })
+        window.FZ_API.addExercise({ patient_id: p.id, name: ex.name, demo: ex.demo, reps: ex.reps, sets: ex.sets, hold: ex.hold, freq: ex.freq, note: ex.note, verify_text: ex.verify, created_by: st.doctor.id })
           .then(async () => { await refreshProgram(p.id); render(); toast(pr.name + ' eklendi'); }).catch(() => toast('Eklenemedi'));
-      } else { p.program.push({ id: 'e' + Date.now(), ...ex, done: false }); S.save(); closeSheet(); render(); toast(pr.name + ' eklendi'); }
+      } else { p.program.push({ id: 'e' + Date.now(), ...ex }); S.save(); closeSheet(); render(); toast(pr.name + ' eklendi'); }
       return;
     }
     if (act === 'del-ex') {
@@ -886,14 +1077,22 @@
       else { p.program = p.program.filter(x => x.id !== d.eid); S.save(); render(); toast('Hareket silindi'); }
       return;
     }
+    if (act === 'edit-ex') { const p = S.patient(params.id); const ex = p.program.find(x => x.id === d.eid); if (!ex) return; cfgVerify = !!ex.verify; return openSheet(editSheet(p.id, ex)); }
+    if (act === 'save-ex') {
+      const p = S.patient(d.id); const ex = p.program.find(x => x.id === d.eid); if (!ex) return;
+      const patch = { name: ($('#edName', document).value || ex.name).trim(), reps: +$('#edReps', document).value || ex.reps, sets: +$('#edSets', document).value || ex.sets, hold: +$('#edHold', document).value || 0, freq: Math.max(1, +$('#edFreq', document).value || 1), note: ($('#edNote', document).value || '').trim(), verify: cfgVerify ? (ex.verify || 'Hareketi yap ve kameraya göster') : null };
+      if (S.isCloud()) { closeSheet(); window.FZ_API.updateExercise(d.eid, { name: patch.name, reps: patch.reps, sets: patch.sets, hold: patch.hold, freq: patch.freq, note: patch.note, verify_text: patch.verify }).then(async () => { await refreshProgram(p.id); render(); toast('Güncellendi'); }).catch(() => toast('Güncellenemedi')); }
+      else { Object.assign(ex, patch); S.save(); closeSheet(); render(); toast('Güncellendi'); }
+      return;
+    }
 
     /* player + verify */
-    if (act === 'start-session') { const p = st.patients[0]; const ids = p.program.filter(e => !e.done).map(e => e.id); if (!ids.length) return toast('Bugün zaten tamam'); session = { ids, i: 0 }; return go('p_exercise', { eid: ids[0], session: true }); }
+    if (act === 'start-session') { const p = st.patients[0]; const ids = p.program.filter(e => !isDoneToday(p, e)).map(e => e.id); if (!ids.length) return toast('Bugün zaten tamam'); session = { ids, i: 0 }; return go('p_exercise', { eid: ids[0], session: true }); }
     if (act === 'goverify') return go('p_verify', { eid: d.eid });
-    if (act === 'complete-ex') {
-      const p = st.patients[0]; const ex = p.program.find(x => x.id === d.eid); if (ex) ex.done = true; if (st.settings.gamify) p.points += 20;
-      if (S.isCloud()) window.FZ_API.logCompletion({ exercise_id: d.eid, patient_id: p.id, verified: false }).catch(() => {});
-      S.save(); toast('Tamamlandı'); if (session) return sessionAdvance(); return home();
+    if (act === 'complete-noverify') {
+      const p = st.patients[0]; const ex = p.program.find(x => x.id === d.eid) || p.program[0];
+      recordSession(ex, false);
+      toast('Kanıtsız tamamlandı'); if (session) return sessionAdvance(); return home();
     }
     if (act === 'sim-verify') { const p = st.patients[0]; return verifySuccess(p.program.find(x => x.id === d.eid) || p.program[0]); }
 
@@ -919,7 +1118,7 @@
       if (error) throw error;
       const cs = await window.__fzBuildCloudState();
       if (!cs) throw new Error('profil');
-      S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render();
+      S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); startRealtime();
     } catch (e) {
       btn.disabled = false; btn.textContent = 'Giriş yap';
       const m = ((e && e.message) || '').toLowerCase();
@@ -942,7 +1141,7 @@
     if (msg) { err.hidden = false; err.innerHTML = `<i class="ti ti-alert-circle"></i> ${esc(msg)}`; return; }
     err.hidden = true;
 
-    // Phone OTP needs an SMS provider (Twilio/Netgsm) configured in Supabase — not yet wired.
+    // Phone OTP needs an SMS provider (Twilio/Netgsm) configured in Supabase, not yet wired.
     if (phone) { err.hidden = false; err.innerHTML = '<i class="ti ti-info-circle"></i> Telefonla kayıt için SMS sağlayıcısı gerekiyor (yakında). Şimdilik e-posta ile kayıt ol.'; return; }
 
     const btn = $('[data-act="register"]'); if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Hesap oluşturuluyor…'; }
@@ -952,7 +1151,7 @@
       if (data.session) {
         const cs = await window.__fzBuildCloudState();
         if (!cs) throw new Error('profil');
-        S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render();
+        S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); startRealtime();
         toast('Hesabın oluşturuldu');
       } else {
         // email confirmation required (secure default)
@@ -968,7 +1167,8 @@
 
   /* ---------- cloud state assembly ---------- */
   const initialsOf = (name) => ((name || '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toLocaleUpperCase('tr')) || '?';
-  const mapEx = (e) => ({ id: e.id, name: e.name, demo: e.demo || 'generic', video: !!e.video_url, reps: e.reps, sets: e.sets, hold: e.hold, note: e.note || '', verify: e.verify_text, done: false });
+  const mapEx = (e) => ({ id: e.id, name: e.name, demo: e.demo || 'generic', video: !!e.video_url, reps: e.reps, sets: e.sets, hold: e.hold, freq: e.freq || 1, note: e.note || '', verify: e.verify_text, done: false });
+  const mapSessions = (comps) => (comps || []).map(c => ({ exId: c.exercise_id, date: (c.done_at || '').slice(0, 10), verified: !!c.verified, at: c.done_at }));
 
   async function buildPatient(p) {
     const api = window.FZ_API;
@@ -979,11 +1179,12 @@
     let nextAppt = 'Planlanmadı';
     if (appts && appts[0]) { const d = new Date(appts[0].at); nextAppt = `${d.getDate()} ${MONTHS[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
     return {
-      id: p.id, name: p.full_name || 'İsimsiz', initials: initialsOf(p.full_name), condition: p.condition || '—', week: p.week || 1,
+      id: p.id, name: p.full_name || 'İsimsiz', initials: initialsOf(p.full_name), condition: p.condition || '-', week: p.week || 1,
       adherence: 0, streak: gam ? gam.streak : 0, points: gam ? gam.points : 0, journeyStage: gam ? gam.journey_stage : 1,
       history: [0, 0, 0, 0, 0, 0, 0], note: p.note || '', nextAppt,
       notif: notif ? { tone: notif.tone || 'normal', times: notif.times || ['18:00'], escalateDays: notif.inactive_days || 2, autoActions: notif.auto_actions || ['notifyDoctor'] } : { tone: 'normal', times: ['18:00'], escalateDays: 2, autoActions: ['notifyDoctor'] },
       couldnt: (fb || []).map(f => ({ day: '', reason: f.reason || '', text: f.note || '', pain: f.pain })),
+      sessions: mapSessions(comps),
       program: (program || []).map(e => ({ ...mapEx(e), done: doneSet.has(e.id) }))
     };
   }
@@ -996,17 +1197,19 @@
       session: { role: profile.role, id: profile.id, cloud: true }, cloud: true, code: profile.code || null,
       settings: { gamify: true, notif: structuredClone(seed.settings.notif) },
       presets: structuredClone(seed.presets), cats: structuredClone(seed.cats), badges: structuredClone(seed.badges), protocols: structuredClone(seed.protocols),
-      doctor: { id: '', name: '', license: '' }, patients: []
+      doctor: { id: '', name: '', license: '', bookingUrl: '' }, patients: [], slots: []
     };
     if (profile.role === 'doctor') {
-      base.doctor = { id: profile.id, name: profile.full_name || 'Fizyoterapist', license: profile.license_no || '' };
-      const pts = await api.myPatients();
+      base.doctor = { id: profile.id, name: profile.full_name || 'Fizyoterapist', license: profile.license_no || '', bookingUrl: profile.booking_url || '' };
+      const [pts, slots] = await Promise.all([api.myPatients(), api.mySlots()]);
       base.patients = await Promise.all((pts || []).map(buildPatient));
+      base.slots = (slots || []).map(mapSlot);
     } else {
       const doc = await api.myDoctor();
-      base.doctor = doc ? { id: profile.doctor_id, name: doc.full_name || 'Fizyoterapist', license: doc.license_no || '' } : { id: '', name: 'Fizyoterapist atanmadı', license: '' };
+      base.doctor = doc ? { id: profile.doctor_id, name: doc.full_name || 'Fizyoterapist', license: doc.license_no || '', bookingUrl: doc.booking_url || '' } : { id: '', name: 'Fizyoterapist atanmadı', license: '', bookingUrl: '' };
       const self = await buildPatient(profile);
       base.patients = [self];
+      if (profile.doctor_id) { const slots = await api.openSlots(profile.doctor_id); base.slots = (slots || []).map(mapSlot); }
       const g = await api.getGamification(profile.id); if (g) base.settings.gamify = g.gamify_enabled;
     }
     return base;
@@ -1017,14 +1220,63 @@
     const doneSet = new Set((comps || []).map(c => c.exercise_id));
     const p = S.patient(pid); if (p) p.program = (prog || []).map(e => ({ ...mapEx(e), done: doneSet.has(e.id) }));
   }
+  function mapSlot(s) { const d = new Date(s.at); return { id: s.id, at: s.at, date: `${d.getDate()} ${MONTHS[d.getMonth()]} ${DAYS_SHORT[d.getDay()]}`, time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`, bookedBy: s.booked_by || null }; }
+  async function refreshSlots() {
+    const st = S.get(); if (!S.isCloud() || !st) return;
+    if (st.session.role === 'doctor') { const rows = await window.FZ_API.mySlots(); st.slots = (rows || []).map(mapSlot); }
+    else if (st.doctor.id) { const rows = await window.FZ_API.openSlots(st.doctor.id); st.slots = (rows || []).map(mapSlot); }
+  }
   window.__fzBuildCloudState = buildCloudState; // used by handlers
+
+  /* ---------- realtime: instant doctor↔patient sync ---------- */
+  let rtTimer = null;
+  async function startRealtime() {
+    if (!S.isCloud()) return;
+    try { await window.FZ_API.unsubscribeAll(); } catch (e) {}
+    const st = S.get(); if (!st) return;
+    const onChange = () => { if (rtTimer) clearTimeout(rtTimer); rtTimer = setTimeout(refreshFromCloud, 450); };
+    try {
+      if (st.session.role === 'patient') await window.FZ_API.subscribePatient(st.patients[0].id, onChange);
+      else await window.FZ_API.subscribeDoctor(onChange);
+    } catch (e) {}
+  }
+  async function refreshFromCloud() {
+    if (!S.isCloud()) return;
+    try {
+      const cur = S.get();
+      const cs = await buildCloudState(); if (!cs) return;
+      cs.settings.gamify = cur.settings.gamify;       // keep local UI prefs
+      S.loadCloud(cs);
+      const route = stack[stack.length - 1];
+      const passive = ['d_patients', 'd_patient', 'd_analytics', 'd_notifs', 'd_profile', 'd_appts', 'p_today', 'p_journey', 'p_profile'];
+      // don't disrupt an open sheet, a running camera, or the in-progress player
+      if (!document.getElementById('fzSheet') && route !== 'p_verify' && route !== 'p_exercise' && passive.includes(route)) {
+        render();
+        if (cur.session && cur.session.role === 'patient') toast('Fizyoterapistin güncelledi');
+      }
+    } catch (e) {}
+  }
+
+  /* ---------- web push (real reminders sent by supabase/functions/send-reminders) ---------- */
+  function urlB64ToUint8(s) { const pad = '='.repeat((4 - s.length % 4) % 4); const b = (s + pad).replace(/-/g, '+').replace(/_/g, '/'); const raw = atob(b); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); }
+  async function subscribePush() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const key = (window.FZ_CONFIG || {}).vapidPublic;
+      if (!key) return;                       // VAPID not configured yet — local notifications still work
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(key) });
+      if (S.isCloud()) await window.FZ_API.savePushSubscription(sub.toJSON());
+    } catch (e) {}
+  }
 
   /* boot */
   stack = ['welcome']; render();
   (async function boot() {
     try {
       const sess = await window.FZ_API.session();
-      if (sess) { const cs = await buildCloudState(); if (cs) { S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); return; } }
+      if (sess) { const cs = await buildCloudState(); if (cs) { S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); startRealtime(); return; } }
     } catch (e) { /* offline / not signed in */ }
     if (S.resumeDemo()) { const st = S.get(); stack = [st.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); }
   })();

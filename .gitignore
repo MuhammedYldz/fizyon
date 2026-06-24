@@ -7,3 +7,7 @@ node_modules/
 .expo/
 dist/
 .vscode/
+.playwright-mcp/
+EXPANSION-RESEARCH.md
+*.jpeg
+test-*.png

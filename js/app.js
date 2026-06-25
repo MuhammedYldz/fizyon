@@ -194,27 +194,39 @@
       const p = S.patient(params.id); if (!p) { return screens.d_patients(); }
       const painBadge = (c) => (c.pain != null) ? ` <span class="badge ${c.pain >= 7 ? 'danger' : c.pain >= 4 ? 'warn' : 'teal'}"><i class="ti ti-activity"></i> Ağrı ${c.pain}/10</span>` : '';
       const couldnt = p.couldnt.length ? p.couldnt.map(c => `<div class="card" style="border-color:var(--warn)"><div class="row gap8" style="flex-wrap:wrap"><span class="badge warn"><i class="ti ti-message-2"></i> ${esc(c.reason || 'Geri bildirim')}</span>${painBadge(c)}</div>${c.text ? `<p class="mt8">${esc(c.text)}</p>` : ''}</div>`).join('') : '<p class="hint">Henüz bildirim yok.</p>';
-      return `${appbar(p.name, { back: true, right: `<button class="back" data-act="patient-notif" aria-label="Bildirim ayarı"><i class="ti ti-bell"></i></button>` })}
+      return `${appbar(p.name, { back: true, right: `<button class="icon-btn" data-act="patient-notif" aria-label="Bildirim ayarı"><i class="ti ti-bell"></i></button>` })}
         <section class="screen">
-          <div class="row" style="margin-bottom:16px"><span class="avatar lg">${esc(p.initials)}</span>
-            <div style="flex:1"><div style="font-weight:600;font-size:18px">${esc(p.name)}</div><div class="hint">${esc(p.condition)} · ${p.week}. hafta <button class="btn-ghost" data-act="edit-clinical" data-id="${p.id}" style="padding:2px;font-size:13px"><i class="ti ti-pencil"></i></button></div>
-            <div class="mt8"><span class="badge ${adherenceColor(p.adherence)}">%${p.adherence} uyum</span> <span class="badge coral"><i class="ti ti-flame"></i> ${p.streak} gün</span></div></div></div>
+          <div class="detail-head">
+            <span class="avatar lg">${esc(p.initials)}</span>
+            <div style="flex:1">
+              <div class="hint" style="font-size:15px">${esc(p.condition)} · ${p.week}. hafta <button class="btn-ghost" data-act="edit-clinical" data-id="${p.id}" style="padding:4px;font-size:13px" aria-label="Durumu düzenle"><i class="ti ti-pencil"></i></button></div>
+              <div class="mt8 row gap8" style="flex-wrap:wrap"><span class="badge ${adherenceColor(p.adherence)}">%${p.adherence} uyum</span> <span class="badge coral"><i class="ti ti-flame"></i> ${p.streak} gün seri</span></div>
+            </div>
+          </div>
 
-          <h3 style="margin-bottom:8px">Son 7 gün</h3>
-          <div class="card"><div style="position:relative;height:160px"><canvas id="adChart"></canvas></div></div>
+          <div class="detail-grid">
+            <div class="detail-main">
+              <h3 style="margin-bottom:8px">Son 7 gün</h3>
+              <div class="card"><div style="position:relative;height:160px"><canvas id="adChart"></canvas></div></div>
 
-          <div class="row between" style="margin:18px 0 8px"><h3>Program</h3><button class="btn btn-primary sm" data-act="build" data-id="${p.id}"><i class="ti ti-plus"></i> Düzenle</button></div>
-          ${p.program.length ? p.program.map(e => {
-            const need = e.freq || 1, dc = sessionsToday(p, e.id), ok = dc >= need, nv = sessionsOf(p, e.id, '').filter(s => s.date === (new Date().toISOString().slice(0, 10)) && !s.verified).length;
-            return `<div class="card"><div class="row between"><div><div style="font-weight:600">${esc(e.name)}</div><div class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''} · günde ${need} kez</div></div><span class="badge ${ok ? 'teal' : 'neutral'}">${dc}/${need} bugün</span></div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}${nv ? `<div class="badge warn mt8"><i class="ti ti-shield-off"></i> Bugün ${nv} kez kanıtsız</div>` : ''}</div>`;
-          }).join('') : '<p class="hint">Henüz program yok. "Düzenle" ile ekle.</p>'}
+              <div class="row between" style="margin:18px 0 8px"><h3>Program</h3><button class="btn btn-primary sm" data-act="build" data-id="${p.id}"><i class="ti ti-pencil"></i> Düzenle</button></div>
+              ${p.program.length ? p.program.map(e => {
+                const need = e.freq || 1, dc = sessionsToday(p, e.id), ok = dc >= need, nv = sessionsOf(p, e.id, '').filter(s => s.date === todayStr() && !s.verified).length;
+                return `<div class="card"><div class="row between"><div><div style="font-weight:600">${esc(e.name)}</div><div class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''} · günde ${need} kez</div></div><span class="badge ${ok ? 'teal' : 'neutral'}">${dc}/${need} bugün</span></div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}${nv ? `<div class="badge warn mt8"><i class="ti ti-shield-off"></i> Bugün ${nv} kez kanıtsız</div>` : ''}</div>`;
+              }).join('') : '<p class="hint">Henüz program yok. "Düzenle" ile ekle.</p>'}
+            </div>
 
-          <div class="row between" style="margin:18px 0 8px"><h3>Geri bildirim</h3><button class="btn btn-primary sm" data-act="reply-note" data-id="${p.id}"><i class="ti ti-message-plus"></i> Not gönder</button></div>
-          ${couldnt}
-          ${p.note ? `<div class="card mt8" style="background:var(--teal-50);border-color:var(--teal-100)"><span class="caption" style="color:var(--teal-600)"><i class="ti ti-send"></i> Hastaya gönderdiğin not</span><p class="mt8" style="color:var(--teal-700)">${esc(p.note)}</p></div>` : ''}
+            <div class="detail-side">
+              <div class="row between" style="margin-bottom:8px"><h3>Geri bildirim</h3><button class="btn btn-primary sm" data-act="reply-note" data-id="${p.id}"><i class="ti ti-message-plus"></i> Not gönder</button></div>
+              ${couldnt}
+              ${p.note ? `<div class="card mt8" style="background:var(--teal-50);border-color:var(--teal-100)"><span class="caption" style="color:var(--teal-600)"><i class="ti ti-send"></i> Hastaya gönderdiğin not</span><p class="mt8" style="color:var(--teal-700)">${esc(p.note)}</p></div>` : ''}
 
-          <button class="list-item card mt16" data-act="edit-appt" data-id="${p.id}" style="border-radius:var(--r-lg)"><div style="flex:1"><div class="caption">Sonraki randevu</div><div style="font-weight:600">${esc(p.nextAppt)}</div></div><i class="ti ti-calendar-event" style="font-size:24px;color:var(--teal-600)"></i></button>
-        </section>`;
+              <h3 style="margin:18px 0 8px">Randevu</h3>
+              <button class="list-item card" data-act="edit-appt" data-id="${p.id}" style="border-radius:var(--r-lg)"><div style="flex:1"><div class="caption">Sonraki randevu</div><div style="font-weight:600">${esc(p.nextAppt)}</div></div><i class="ti ti-calendar-event" style="font-size:24px;color:var(--teal-600)"></i></button>
+            </div>
+          </div>
+        </section>
+        ${tabbar('d_patients', 'doctor')}`;
     },
 
     d_build() {
@@ -235,7 +247,8 @@
           <button class="btn btn-secondary mt8" data-act="open-library" data-id="${p.id}"><i class="ti ti-list-search"></i> Tek hareket ekle</button>
           <button class="btn btn-secondary mt8" data-act="record-own" data-id="${p.id}"><i class="ti ti-video"></i> Kendi videonu kaydet</button>
           <button class="btn btn-primary mt24" data-act="back"><i class="ti ti-check"></i> Bitir</button>
-        </section>`;
+        </section>
+        ${tabbar('d_patients', 'doctor')}`;
     },
 
     d_newpatient() {
@@ -247,7 +260,8 @@
           <div class="field"><label for="npWeek">Tedavi haftası</label><input class="input" id="npWeek" type="number" value="1" min="1" inputmode="numeric"></div>
           <div class="err-msg" id="npErr" hidden></div>
           <button class="btn btn-primary mt8" data-act="create-patient"><i class="ti ti-check"></i> Hasta oluştur</button>
-        </section>`;
+        </section>
+        ${tabbar('d_patients', 'doctor')}`;
     },
 
     d_analytics() {
@@ -304,7 +318,8 @@
           <div class="num-row"><div class="field"><label>Tarih</label><input class="input" id="slDate" type="date"></div><div class="field"><label>Saat</label><input class="input" id="slTime" type="time" value="10:00"></div></div>
           <button class="btn btn-secondary" data-act="add-slot"><i class="ti ti-plus"></i> Saat ekle</button>
           <div class="card flush mt16">${slots.length ? slots.map(slotRow).join('') : '<p class="hint" style="padding:16px">Henüz uygun saat eklemedin.</p>'}</div>
-        </section>`;
+        </section>
+        ${tabbar('d_profile', 'doctor')}`;
     },
     d_profile() { return profile('doctor'); },
 

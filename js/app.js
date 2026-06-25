@@ -286,7 +286,7 @@
     },
     d_notifs() {
       const st = S.get(); const n = st.settings.notif;
-      const chTog = (k, l) => `<div class="row between" style="margin-bottom:10px"><span>${l}</span><button class="chip ${n[k] ? 'on' : ''}" data-act="ntog" data-k="${k}">${n[k] ? 'Açık' : 'Kapalı'}</button></div>`;
+      const chTog = (k, l) => `<div class="row between" style="margin-bottom:12px"><span>${l}</span><button class="switch" role="switch" aria-checked="${n[k] ? 'true' : 'false'}" data-act="ntog" data-k="${k}" aria-label="${l}"></button></div>`;
       return `${appbar('Bildirimler')}
         <section class="screen">
           <h3 style="margin-bottom:8px">Genel ayarlar</h3>
@@ -507,9 +507,9 @@
     return `${appbar('Profil')}<section class="screen">
       <div class="row" style="margin-bottom:18px"><span class="avatar lg">${esc(inits)}</span><div><div style="font-weight:600;font-size:18px">${esc(name)}</div><div class="hint">${sub}${st.cloud ? '' : ' · demo'}</div></div></div>
       ${role === 'doctor' && st.cloud ? `<div class="card"><div class="caption">Fizyoterapist kodun</div><div class="row between" style="margin-top:6px"><div style="font-weight:700;letter-spacing:3px;font-size:22px;color:var(--teal-700)">${esc(st.code || '-')}</div><div class="row gap8"><button class="btn sm btn-secondary" data-act="copy-code" data-code="${esc(st.code || '')}"><i class="ti ti-copy"></i> Kopyala</button><button class="btn sm btn-secondary" data-act="new-patient"><i class="ti ti-user-plus"></i> Davet</button></div></div></div>` : ''}
-      ${role === 'patient' ? `<div class="card row between"><div><div style="font-weight:600">Oyunlaştırma</div><div class="hint">Puan, seri ve ödülleri göster</div></div><button class="chip ${st.settings.gamify ? 'on' : ''}" data-act="toggle-gamify">${st.settings.gamify ? 'Açık' : 'Kapalı'}</button></div>` : ''}
+      ${role === 'patient' ? `<div class="card row between"><div><div style="font-weight:600">Oyunlaştırma</div><div class="hint">Puan, seri ve ödülleri göster</div></div><button class="switch" role="switch" aria-checked="${st.settings.gamify ? 'true' : 'false'}" data-act="toggle-gamify" aria-label="Oyunlaştırma"></button></div>` : ''}
       ${role === 'doctor' ? `<button class="list-item card" data-go="d_appts" style="border-radius:var(--r-lg)"><i class="ti ti-calendar" style="color:var(--teal-600);font-size:22px"></i><span style="flex:1"><span style="font-weight:600">Randevular</span><br><span class="hint">Randevu bağlantın ve uygun saatlerin</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>` : ''}
-      <div class="card row between"><div><div style="font-weight:600">Büyük yazı</div><div class="hint">Daha büyük metin ve butonlar</div></div><button class="chip ${uiGet('bigText') ? 'on' : ''}" data-act="toggle-bigtext">${uiGet('bigText') ? 'Açık' : 'Kapalı'}</button></div>
+      <div class="card row between"><div><div style="font-weight:600">Büyük yazı</div><div class="hint">Daha büyük metin ve butonlar</div></div><button class="switch" role="switch" aria-checked="${uiGet('bigText') ? 'true' : 'false'}" data-act="toggle-bigtext" aria-label="Büyük yazı"></button></div>
       <div class="card flush mt16">
         <a class="list-item" href="privacy.html" target="_blank" style="text-decoration:none"><i class="ti ti-lock" style="color:var(--ink-500)"></i><span style="flex:1">Gizlilik ve güvenlik</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
         <a class="list-item" href="terms.html" target="_blank" style="text-decoration:none"><i class="ti ti-file-text" style="color:var(--ink-500)"></i><span style="flex:1">Kullanım koşulları</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
@@ -800,7 +800,7 @@
       </div>
       <div class="field"><label>Günde kaç kez (farklı zamanlarda)</label><input class="input" id="cfgFreq" type="number" min="1" value="1" inputmode="numeric"></div>
       <div class="field"><label>Not</label><textarea id="cfgNote">${esc(pr.note)}</textarea></div>
-      <div class="card row between" style="margin-bottom:14px"><div><div style="font-weight:600">Kamerayla kanıt iste</div><div class="hint">Hasta her seansı bir kez kanıtlasın</div></div><button class="chip" id="cfgVerify" data-act="toggle-cfg-verify">Kapalı</button></div>
+      <div class="card row between" style="margin-bottom:14px"><div><div style="font-weight:600">Kamerayla kanıt iste</div><div class="hint">Hasta her seansı bir kez kanıtlasın</div></div><button class="switch" id="cfgVerify" role="switch" aria-checked="false" data-act="toggle-cfg-verify" aria-label="Kamerayla kanıt iste"></button></div>
       <button class="btn btn-primary" data-act="add-preset" data-pid="${pr.id}" data-id="${pid}"><i class="ti ti-plus"></i> Programa ekle</button>`;
   }
   function couldntSheet(eid) {
@@ -924,7 +924,7 @@
       </div>
       <div class="field"><label>Günde kaç kez (farklı zamanlarda)</label><input class="input" id="edFreq" type="number" min="1" value="${ex.freq || 1}" inputmode="numeric"></div>
       <div class="field"><label>Not</label><textarea id="edNote">${esc(ex.note || '')}</textarea></div>
-      <div class="card row between" style="margin-bottom:14px"><div><div style="font-weight:600">Kamerayla kanıt iste</div><div class="hint">Hasta hareketi kanıtlasın</div></div><button class="chip ${ex.verify ? 'on' : ''}" id="cfgVerify" data-act="toggle-cfg-verify">${ex.verify ? 'Açık' : 'Kapalı'}</button></div>
+      <div class="card row between" style="margin-bottom:14px"><div><div style="font-weight:600">Kamerayla kanıt iste</div><div class="hint">Hasta hareketi kanıtlasın</div></div><button class="switch" id="cfgVerify" role="switch" aria-checked="${ex.verify ? 'true' : 'false'}" data-act="toggle-cfg-verify" aria-label="Kamerayla kanıt iste"></button></div>
       <button class="btn btn-primary" data-act="save-ex" data-eid="${ex.id}" data-id="${pid}"><i class="ti ti-check"></i> Kaydet</button>`;
   }
   function delConfirmSheet(eid, name) {
@@ -1092,7 +1092,7 @@
     if (act === 'open-library') { sheetCat = 'all'; return openSheet(librarySheet(d.id)); }
     if (act === 'set-cat') { sheetCat = d.cat; return openSheet(librarySheet(d.id)); }
     if (act === 'pick-preset') { cfgVerify = false; const pr = st.presets.find(x => x.id === d.pid); return openSheet(configSheet(d.id, pr)); }
-    if (act === 'toggle-cfg-verify') { cfgVerify = !cfgVerify; t.textContent = cfgVerify ? 'Açık' : 'Kapalı'; t.classList.toggle('on', cfgVerify); return; }
+    if (act === 'toggle-cfg-verify') { cfgVerify = !cfgVerify; t.setAttribute('aria-checked', cfgVerify ? 'true' : 'false'); return; }
     if (act === 'add-preset') {
       const pr = st.presets.find(x => x.id === d.pid); const p = S.patient(d.id);
       const ex = { name: pr.name, demo: pr.demo, reps: +$('#cfgReps', document).value || pr.reps, sets: +$('#cfgSets', document).value || pr.sets, hold: +$('#cfgHold', document).value || 0, freq: Math.max(1, +$('#cfgFreq', document).value || 1), note: $('#cfgNote', document).value.trim(), verify: cfgVerify ? 'Hareketi yap ve kameraya göster' : null };

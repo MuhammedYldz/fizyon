@@ -392,11 +392,11 @@
             <div class="timer-ring" id="tring"><div class="inner"><span class="timer" id="tval">${e.hold || e.reps}</span><span class="hint" id="tlbl">${e.hold ? 'saniye tut' : 'tekrar'}</span></div></div>
             <button class="btn btn-primary mt16" id="tstart" style="max-width:220px;margin-left:auto;margin-right:auto"><i class="ti ti-player-play"></i> Seti başlat</button>
           </div>
-          <div id="finishBox" hidden>
-            <p class="caption center" style="margin:14px 0 8px"><i class="ti ti-circle-check" style="color:var(--teal-600);vertical-align:-2px"></i> Setleri bitirdin. Bu seansı kanıtla:</p>
-            <button class="btn btn-accent" data-act="goverify" data-eid="${e.id}"><i class="ti ti-shield-check"></i> Kamerayla kanıtla</button>
+          <div id="finishBox">
+            <p class="caption center" id="finishHdr" style="margin:14px 0 8px"><i class="ti ti-shield-check" style="color:var(--teal-600);vertical-align:-2px"></i> Hareketi yap, sonra canlı kamerayla kanıtla:</p>
+            <button class="btn btn-accent" data-act="goverify" data-eid="${e.id}"><i class="ti ti-camera"></i> Kamerayla kanıtla</button>
             <button class="btn btn-secondary mt8" data-act="complete-noverify" data-eid="${e.id}"><i class="ti ti-check"></i> Kanıtsız tamamla</button>
-            <p class="hint center mt8">Kanıtlamadan tamamlarsan kaydında “kanıtsız” olarak görünür.</p>
+            <p class="hint center mt8">Kanıtlamadan tamamlarsan kaydında “kanıtsız” görünür.</p>
           </div>
           <button class="btn-ghost" data-act="couldnt" data-eid="${e.id}" style="display:flex;margin:14px auto 0"><i class="ti ti-help-circle"></i> Bugün yapamadım</button>
         </section>`;

@@ -279,8 +279,10 @@
             <div class="stat" style="flex:1"><div class="l">Ortalama uyum</div><div class="v">%${avg}</div></div>
             <div class="stat" style="flex:1"><div class="l">Risk altında</div><div class="v" style="color:var(--warn)">${atRisk}</div></div>
           </div>
-          <div class="card"><h3 style="margin-bottom:10px">Hasta uyum karşılaştırması</h3><div style="position:relative;height:200px"><canvas id="cmpChart"></canvas></div></div>
-          <div class="card"><h3 style="margin-bottom:10px">Haftalık trend</h3><div style="position:relative;height:180px"><canvas id="trendChart"></canvas></div></div>
+          <div class="chart-grid">
+            <div class="card"><h3 style="margin-bottom:10px">Hasta uyum karşılaştırması</h3><div style="position:relative;height:200px"><canvas id="cmpChart"></canvas></div></div>
+            <div class="card"><h3 style="margin-bottom:10px">Haftalık trend</h3><div style="position:relative;height:200px"><canvas id="trendChart"></canvas></div></div>
+          </div>
         </section>
         ${tabbar('d_analytics', 'doctor')}`;
     },
@@ -338,9 +340,10 @@
         const dc = sessionsToday(p, e.id), need = e.freq || 1, ok = dc >= need;
         return `<button class="list-item" data-exercise="${e.id}">
           <i class="ti ${ok ? 'ti-circle-check' : 'ti-circle'}" style="font-size:24px;color:${ok ? 'var(--teal-600)' : 'var(--ink-300)'}"></i>
-          <span style="flex:1"><span style="font-weight:600">${esc(e.name)}</span><br><span class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''}${need > 1 ? ' · ' + dc + '/' + need + ' kez' : ''}</span></span>
-          ${e.verify ? '<span class="badge teal"><i class="ti ti-shield-check"></i></span>' : ''}
-          <i class="ti ti-player-play" style="font-size:20px;color:var(--teal-600)"></i>
+          <span style="flex:1;min-width:0"><span style="font-weight:600">${esc(e.name)}</span><br><span class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''}</span></span>
+          ${need > 1 ? `<span class="badge neutral">${dc}/${need}</span>` : ''}
+          ${e.verify ? '<span class="badge teal" aria-label="Kamera kanıtı istenir"><i class="ti ti-shield-check"></i></span>' : ''}
+          <i class="ti ti-player-play" style="font-size:20px;color:var(--teal-600)" aria-hidden="true"></i>
         </button>`; }).join('');
       const docInit = st.doctor.name.replace('Fzt.', '').trim().split(' ').map(w => w[0]).join('').slice(0, 2);
       return `<div class="appbar"><div class="brand"><img src="assets/logo.svg" alt="">Fizyon</div><div class="spacer"></div>${st.settings.gamify ? `<span class="badge coral"><i class="ti ti-flame"></i> ${p.streak}</span>` : ''}</div>
@@ -372,8 +375,12 @@
       const sets = e.sets || 1, dc = sessionsToday(p, e.id), need = e.freq || 1;
       return `${appbar(e.name, { back: true })}
         <section class="screen">
-          <p class="muted" style="margin-bottom:12px">${idx}/${p.program.length} · ${e.reps}×${sets}${e.hold ? ' · ' + e.hold + ' sn tut' : ''}${need > 1 ? ' · bugün ' + (dc + 1) + '. kez (' + need + ' gerek)' : ''}</p>
-          <div class="demo-stage" style="height:230px">
+          <div class="meta-chips">
+            <span class="chip-sm"><i class="ti ti-list-numbers"></i> Hareket ${idx}/${p.program.length}</span>
+            <span class="chip-sm">${e.reps}×${sets}${e.hold ? ' · ' + e.hold + ' sn' : ' tekrar'}</span>
+            ${need > 1 ? `<span class="chip-sm"><i class="ti ti-repeat"></i> Bugün ${dc}/${need}</span>` : ''}
+          </div>
+          <div class="demo-stage" style="height:200px">
             <span class="badge teal demo-src"><i class="ti ti-${e.video ? 'video' : 'sparkles'}"></i> ${e.video ? 'Hekimin kaydı' : 'Hazır animasyon'}</span>
             ${fzDemo(e.demo)}
           </div>
@@ -391,7 +398,7 @@
             <button class="btn btn-secondary mt8" data-act="complete-noverify" data-eid="${e.id}"><i class="ti ti-check"></i> Kanıtsız tamamla</button>
             <p class="hint center mt8">Kanıtlamadan tamamlarsan kaydında “kanıtsız” olarak görünür.</p>
           </div>
-          <button class="btn btn-secondary mt8" data-act="couldnt" data-eid="${e.id}"><i class="ti ti-mood-sad"></i> Yapamadım</button>
+          <button class="btn-ghost" data-act="couldnt" data-eid="${e.id}" style="display:flex;margin:14px auto 0"><i class="ti ti-help-circle"></i> Bugün yapamadım</button>
         </section>`;
     },
 

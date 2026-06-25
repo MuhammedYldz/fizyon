@@ -115,7 +115,8 @@ h3{font-size:17px;font-weight:700;letter-spacing:-.1px}
 .btn-accent:hover{filter:brightness(1.04)}
 .btn-secondary{background:var(--surface);border-color:var(--line);color:var(--ink-900);box-shadow:var(--shadow-sm)}
 .btn-secondary:hover{border-color:var(--teal-100)}
-.btn-ghost{background:transparent;color:var(--teal-600);width:auto;height:auto;padding:8px}
+.btn-ghost{background:transparent;color:var(--teal-600);width:auto;height:auto;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:var(--r-md)}
+.btn-ghost:hover{background:var(--teal-50)}
 .btn-danger{background:transparent;border-color:var(--danger);color:var(--danger)}
 .btn.sm{height:40px;font-size:14px;padding:0 14px;width:auto}
 .btn-block{width:100%}
@@ -170,13 +171,12 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
 .bar i{display:block;height:100%;background:var(--teal-500);border-radius:inherit}
 
 /* Bottom nav — floating bar, active tab expands into a labelled pill */
-.tabbar{position:sticky;bottom:0;max-width:var(--maxw);margin:0 auto;padding:8px 14px max(10px,env(safe-area-inset-bottom));z-index:30;background:linear-gradient(to top,var(--bg) 60%,transparent)}
-.tabwrap{display:flex;align-items:center;justify-content:space-between;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);padding:6px;box-shadow:0 6px 22px rgba(15,26,23,.12)}
-.tabwrap button{display:flex;align-items:center;gap:8px;border:none;background:transparent;color:var(--ink-500);padding:11px;border-radius:var(--r-pill);cursor:pointer;font-size:14px;font-weight:600;transition:background .2s,color .2s,padding .2s}
-.tabwrap button i{font-size:22px}
-.tabwrap button .lbl{display:none;white-space:nowrap}
-.tabwrap button.on{background:linear-gradient(180deg,var(--teal-500),var(--teal-600));color:#fff;padding:11px 18px;box-shadow:0 6px 14px -6px color-mix(in srgb,var(--teal-600) 80%,transparent)}
-.tabwrap button.on .lbl{display:inline}
+.tabbar{position:sticky;bottom:0;max-width:var(--maxw);margin:0 auto;padding:8px 8px max(10px,env(safe-area-inset-bottom));z-index:30;background:linear-gradient(to top,var(--bg) 60%,transparent)}
+.tabwrap{display:flex;align-items:center;justify-content:space-between;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);padding:5px;box-shadow:0 6px 22px rgba(15,26,23,.12)}
+.tabwrap button{display:flex;align-items:center;justify-content:center;gap:5px;border:none;background:transparent;color:var(--ink-500);padding:10px 11px;min-height:44px;border-radius:var(--r-pill);cursor:pointer;font-size:12.5px;font-weight:600;transition:background .2s,color .2s}
+.tabwrap button i{font-size:20px}
+.tabwrap button .lbl{display:inline;white-space:nowrap}   /* labels always visible (clarity for tired patients) */
+.tabwrap button.on{background:linear-gradient(180deg,var(--teal-500),var(--teal-600));color:#fff;box-shadow:0 6px 14px -6px color-mix(in srgb,var(--teal-600) 80%,transparent)}
 .tabwrap button:active{transform:scale(.95)}
 
 /* Achievement / share card */
@@ -204,7 +204,10 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
 /* Animated exercise demos — clean "gray body" looped figures (offline fallback).
    The limb a given exercise works is highlighted teal; the rest stays gray. */
 .demo-stage{position:relative;background:radial-gradient(120% 90% at 50% 18%,var(--teal-50),var(--bg) 70%);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.fz-demo{width:74%;max-width:240px;color:var(--ink-300)}
+.fz-demo{width:60%;max-width:190px;color:var(--ink-300)}
+/* Player info chips (replaces the cryptic dot-separated metadata line) */
+.meta-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px}
+.chip-sm{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink-500);font-size:13px;font-weight:600}
 .fz-demo g{transform-box:view-box}
 .fz-demo .seg{fill:currentColor}
 .fz-demo .joint{fill:var(--ink-500);opacity:.7}
@@ -225,7 +228,7 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
 .fz-demo--neckTilt .d-head .seg,.fz-demo--neckRotation .d-head .seg,
 .fz-demo--kneeextension .d-shin .seg,
 .fz-demo--catcow .d-spine .seg,.fz-demo--birddog .d-armR .seg{
-  fill:var(--teal-500);filter:drop-shadow(0 0 3px color-mix(in srgb,var(--teal-500) 55%,transparent));
+  fill:var(--teal-500);
 }
 
 @media (prefers-reduced-motion:no-preference){
@@ -451,6 +454,8 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
   #app[data-route="d_patient"] .detail-grid{grid-template-columns:1.5fr 1fr;gap:24px;align-items:start}
   /* Builder: program as a 2-up grid to use the width */
   #app[data-route="d_build"] .builder-grid{grid-template-columns:1fr 1fr;gap:14px}
+  /* Analytics: charts side by side */
+  #app[data-route="d_analytics"] .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 
   /* New-patient & program-builder forms read better not full-bleed */
   #app[data-route="d_newpatient"] .field,
@@ -471,6 +476,7 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
 .detail-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
 .detail-grid{display:grid;grid-template-columns:1fr;gap:18px}
 .detail-side h3:first-child{margin-top:0}
+.chart-grid{display:grid;grid-template-columns:1fr;gap:14px}
 
 /* Doctor pushed screens render a tabbar (→ sidebar on web), but on PHONES they keep just the
    back-bar — hide the bottom tab bar there so it doesn't double up with the back navigation. */

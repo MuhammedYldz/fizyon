@@ -204,7 +204,10 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
 /* Animated exercise demos — clean "gray body" looped figures (offline fallback).
    The limb a given exercise works is highlighted teal; the rest stays gray. */
 .demo-stage{position:relative;background:radial-gradient(120% 90% at 50% 18%,var(--teal-50),var(--bg) 70%);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.fz-demo{width:60%;max-width:190px;color:var(--ink-300)}
+.fz-demo{width:60%;max-width:190px;color:var(--ink-300);overflow:visible}
+/* In the player/config stage, fit by HEIGHT so the figure (and its raised-limb motions)
+   always stay inside the frame regardless of stage width. */
+.demo-stage .fz-demo{width:auto;height:96%;max-width:88%;max-height:96%}
 /* Player info chips (replaces the cryptic dot-separated metadata line) */
 .meta-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px}
 .chip-sm{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink-500);font-size:13px;font-weight:600}
@@ -260,7 +263,7 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
   @keyframes d-shoulder{0%,100%{transform:rotate(0)}50%{transform:rotate(-26deg)}}
   /* arm raise — front raise */
   .fz-demo--armraise .d-arms{transform-origin:60px 52px;animation:d-armraise 2.6s ease-in-out infinite}
-  @keyframes d-armraise{0%,100%{transform:rotate(0)}50%{transform:rotate(-160deg)}}
+  @keyframes d-armraise{0%,100%{transform:rotate(0)}50%{transform:rotate(-150deg)}}
   /* shrug — shoulders up/down */
   .fz-demo--shrug .d-arms{animation:d-shrug 2s ease-in-out infinite}
   .fz-demo--shrug .d-head{animation:d-shrughead 2s ease-in-out infinite}
@@ -273,7 +276,7 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
   .fz-demo--neckTilt .d-head{transform-origin:60px 40px;animation:d-necktilt 3s ease-in-out infinite}
   @keyframes d-necktilt{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
   .fz-demo--neckRotation .d-head{transform-origin:60px 40px;animation:d-neckrot 3s ease-in-out infinite}
-  @keyframes d-neckrot{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.62)}}
+  @keyframes d-neckrot{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.78)}}
   /* hip abduction — standing leg out */
   .fz-demo--hipabduction .d-legR{transform-origin:66px 100px;animation:d-hipab 2.6s ease-in-out infinite}
   @keyframes d-hipab{0%,100%{transform:rotate(0)}50%{transform:rotate(24deg)}}
@@ -332,7 +335,7 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
 .preset{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);cursor:pointer;width:100%;text-align:left;color:var(--ink-900);margin-bottom:8px}
 .preset:active{background:var(--bg)}
 .preset .pv{width:54px;height:54px;border-radius:var(--r-sm);background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.preset .pv .fz-demo{width:80%}
+.preset .pv .fz-demo{width:104%}
 .cat-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px;-webkit-overflow-scrolling:touch}
 .cat-row::-webkit-scrollbar{display:none}
 .cat-row .chip{flex-shrink:0}
@@ -349,7 +352,7 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
 .ex-edit{background:none;border:none;padding:0;text-align:left;cursor:pointer;color:var(--ink-900);align-items:center}
 .ex-edit:active{opacity:.7}
 .ex-edit .pv{width:48px;height:48px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
-.ex-edit .pv .fz-demo{width:86%;max-width:none;color:var(--ink-500)}  /* darker so thumbnails read */
+.ex-edit .pv .fz-demo{width:104%;max-width:none;color:var(--ink-500)}  /* darker + larger so thumbnails read despite viewBox padding */
 .ex-card{margin-bottom:0}
 .ex-del{color:var(--ink-300)}
 .ex-del:hover{color:var(--danger);background:var(--danger-bg)}

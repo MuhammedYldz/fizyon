@@ -8,7 +8,7 @@
 
   // Standing figure (squats, balance, arms, neck, marching, calf raises…)
   const standing = (key) => `
-    <svg class="fz-demo fz-demo--${key}" viewBox="0 0 120 190" aria-hidden="true">
+    <svg class="fz-demo fz-demo--${key}" viewBox="-16 -34 152 232" aria-hidden="true">
       <ellipse class="d-shadow" cx="60" cy="184" rx="30" ry="4.5"/>
       <g class="d-legs">
         <g class="d-legL"><rect class="seg" x="49" y="100" width="11" height="76" rx="5.5"/></g>
@@ -28,7 +28,7 @@
 
   // Reclined figure, head to the left (bridge, leg raise, clamshell, heel slide…)
   const reclined = (key) => `
-    <svg class="fz-demo fz-demo--${key}" viewBox="0 0 192 120" aria-hidden="true">
+    <svg class="fz-demo fz-demo--${key}" viewBox="-8 -22 208 150" aria-hidden="true">
       <line class="d-floor" x1="10" y1="98" x2="182" y2="98"/>
       <g class="d-head"><circle class="seg" cx="28" cy="66" r="14"/></g>
       <rect class="seg d-torso" x="40" y="58" width="68" height="22" rx="11"/>
@@ -40,7 +40,7 @@
 
   // Seated figure (knee extension, seated work)
   const seated = (key) => `
-    <svg class="fz-demo fz-demo--${key}" viewBox="0 0 150 156" aria-hidden="true">
+    <svg class="fz-demo fz-demo--${key}" viewBox="-10 -20 172 184" aria-hidden="true">
       <ellipse class="d-shadow" cx="78" cy="150" rx="34" ry="4.5"/>
       <path class="d-chair" d="M56 88 H118 M118 88 V150 M56 88 V60" fill="none"/>
       <g class="d-head"><circle class="seg" cx="62" cy="24" r="13"/></g>
@@ -53,7 +53,7 @@
 
   // Quadruped figure, on hands & knees (cat-cow, bird-dog)
   const quad = (key) => `
-    <svg class="fz-demo fz-demo--${key}" viewBox="0 0 188 132" aria-hidden="true">
+    <svg class="fz-demo fz-demo--${key}" viewBox="-8 -26 204 164" aria-hidden="true">
       <line class="d-floor" x1="8" y1="116" x2="180" y2="116"/>
       <g class="d-head"><circle class="seg" cx="40" cy="56" r="13"/></g>
       <g class="d-spine"><rect class="seg" x="50" y="48" width="86" height="17" rx="8.5"/></g>

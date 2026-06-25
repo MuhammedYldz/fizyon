@@ -11,3 +11,5 @@ dist/
 EXPANSION-RESEARCH.md
 *.jpeg
 test-*.png
+audit/
+.fizyon-tmp/

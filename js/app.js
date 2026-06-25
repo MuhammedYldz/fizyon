@@ -704,9 +704,9 @@
       const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
       const lm = res.landmarks && res.landmarks[0];
       if (!lm) { hint.textContent = 'Vücudun kameraya görünsün'; if (hold) heldSec = Math.max(0, heldSec - dt * 1.5); prevPts = null; camRAF = requestAnimationFrame(loop); return; }
-      ctx.strokeStyle = css('--teal-500') || '#149A7E'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.strokeStyle = css('--teal-500') || '#2F6A5B'; ctx.lineWidth = 4; ctx.lineCap = 'round';
       conns.forEach(([a, b]) => { if (lm[a] && lm[b]) { ctx.beginPath(); ctx.moveTo(lm[a].x * canvas.width, lm[a].y * canvas.height); ctx.lineTo(lm[b].x * canvas.width, lm[b].y * canvas.height); ctx.stroke(); } });
-      ctx.fillStyle = css('--teal-500') || '#149A7E';
+      ctx.fillStyle = css('--teal-500') || '#2F6A5B';
       lm.forEach(pt => { ctx.beginPath(); ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 5, 0, 7); ctx.fill(); });
       const visible = lm.filter(p => (p.visibility ?? 1) > 0.5).length;
       if (visible < 16) { hint.textContent = 'Tüm vücudun kameraya sığsın'; prevPts = null; camRAF = requestAnimationFrame(loop); return; }
@@ -844,7 +844,7 @@
     const days = p.week * 7, moves = p.week * 12, first = p.name.split(' ')[0];
     const c = document.createElement('canvas'); c.width = 1080; c.height = 1080;
     const x = c.getContext('2d');
-    x.fillStyle = '#0E7C66'; x.fillRect(0, 0, 1080, 1080);
+    x.fillStyle = '#1F4D43'; x.fillRect(0, 0, 1080, 1080);
     x.fillStyle = 'rgba(255,255,255,0.06)'; x.beginPath(); x.arc(900, 980, 300, 0, 7); x.fill();
     x.textAlign = 'center';
     // logo badge

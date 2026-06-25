@@ -8,14 +8,16 @@
   --teal-800:#073D33; --teal-700:#0A5F4E; --teal-600:#0E7C66; --teal-500:#149A7E; --teal-400:#36B79A; --teal-100:#BFE6DC; --teal-50:#E6F4F0;
   --coral-600:#D8482C; --coral-500:#F2674A; --coral-100:#F9CFC4; --coral-50:#FCEAE5;
   --ink-900:#0E1A16; --ink-700:#2B3A35; --ink-500:#5C6B66; --ink-300:#9AA8A3;
-  --line:#E2EAE7; --surface:#FFFFFF; --bg:#EFF4F1;
-  --success:#0E7C66; --success-bg:#E6F4F0; --warn:#C77A0E; --warn-bg:#FBF0DD; --danger:#D64545; --danger-bg:#FBEAEA;
+  --line:#E2EAE7; --surface:#FFFFFF; --surface-2:#F6F9F7; --bg:#F1F5F3;
+  --success:#0A6F5B; --success-bg:#E6F4F0; --warn:#8A5A12; --warn-bg:#FBF1DD; --warn-border:#F0DEB6; --danger:#B3261E; --danger-bg:#FBEAEA;
+  --chart-high:#149A7E; --chart-mid:#C99A3B; --chart-low:#C77A5A;  /* calm adherence bands — no fire-engine red */
   --font-display:'Fraunces',ui-serif,Georgia,serif;
   --r-sm:9px; --r-md:13px; --r-lg:18px; --r-xl:24px; --r-pill:999px;
   --shadow-sm:0 1px 2px rgba(11,60,51,.05);
   --shadow:0 4px 16px -4px rgba(11,60,51,.10), 0 2px 5px -2px rgba(11,60,51,.06);
   --shadow-lg:0 18px 48px -12px rgba(11,60,51,.22), 0 6px 16px -8px rgba(11,60,51,.12);
   --ring:color-mix(in srgb,var(--teal-500) 40%,transparent);
+  --focus:0 0 0 3px color-mix(in srgb,var(--teal-500) 42%,transparent);
   --maxw:440px;
 }
 @media (prefers-color-scheme:dark){
@@ -38,7 +40,11 @@ body{
   font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
   font-variant-numeric:tabular-nums;
 }
-button{font-family:inherit}
+/* Reset: no UA-default button borders (fixes the black-box bug across the app) */
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:disabled{cursor:not-allowed}
+/* One designed focus ring on every interactive element (keyboard accessibility) */
+:where(button,a,input,textarea,select,[tabindex],[data-act],[data-go],[data-nav],[data-patient],[data-exercise],[data-reg],[data-login],[data-role-pick]):focus-visible{outline:none;box-shadow:var(--focus);border-radius:var(--r-sm)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* App frame — phone-centered */
@@ -54,7 +60,7 @@ h2{font-family:var(--font-display);font-size:23px;font-weight:600;line-height:1.
 h3{font-size:17px;font-weight:700;letter-spacing:-.1px}
 .display{font-family:var(--font-display)}
 .muted{color:var(--ink-500)}
-.hint{color:var(--ink-300);font-size:14px}
+.hint{color:var(--ink-500);font-size:14px}  /* AA: ~5:1 on --bg (was --ink-300 #9AA8A3 ≈ 2.2:1) */
 .caption{font-size:12px;font-weight:600;color:var(--ink-500);letter-spacing:.02em}
 .center{text-align:center}
 /* premium numerals use the display face */
@@ -114,6 +120,7 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 .badge.coral{background:var(--coral-50);color:var(--coral-600)}
 .badge.warn{background:var(--warn-bg);color:var(--warn)}
 .badge.danger{background:var(--danger-bg);color:var(--danger)}
+.badge.neutral{background:var(--surface-2);color:var(--ink-500)}  /* benign "pending" — calm, not alarming */
 .chip{padding:9px 14px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface);font-size:14px;cursor:pointer;color:var(--ink-700)}
 .chip.on{background:var(--teal-50);border-color:var(--teal-500);color:var(--teal-600);font-weight:600}
 
@@ -126,8 +133,8 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 .option .od{font-size:13px;color:var(--ink-500)}
 
 /* Progress / stats */
-.stat{background:var(--bg);border-radius:var(--r-md);padding:14px}
-.stat .v{font-size:24px;font-weight:600}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-sm)}
+.stat .v{font-size:26px;font-weight:600}
 .stat .l{font-size:13px;color:var(--ink-500)}
 .ring{--p:0;width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--teal-500) calc(var(--p)*1%),var(--line) 0);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .ring span{width:42px;height:42px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
@@ -323,7 +330,7 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 .wh-fill{fill:none;stroke:var(--teal-500);stroke-width:5;stroke-linecap:round;stroke-dasharray:290;stroke-dashoffset:290;animation:wh-draw 1.7s .25s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes wh-draw{to{stroke-dashoffset:0}}
 .wh-dot{fill:var(--coral-500);filter:drop-shadow(0 3px 7px color-mix(in srgb,var(--coral-500) 55%,transparent))}
-.wh-logo{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:26px;background:var(--surface);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;animation:wh-pop .55s 1.5s both}
+.wh-logo{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:26px;background:var(--surface);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;animation:wh-pop .5s .15s both}
 .wh-logo img{border-radius:16px}
 @keyframes wh-pop{from{transform:translate(-50%,-50%) scale(.5);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
 .wh-title{font-size:35px;line-height:1.05;margin-top:8px}
@@ -411,4 +418,13 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
   #app[data-route="d_newpatient"] .field,
   #app[data-route="d_newpatient"] .btn,
   #app[data-route="d_build"] .btn{ max-width:520px; }
+
+  /* Sheets become CENTERED MODALS on web (a phone bottom-sheet on a 1440px screen is wrong) */
+  .scrim{align-items:center}
+  .sheet,.sheet.tall{max-width:480px;border-radius:var(--r-xl);max-height:86vh;overflow-y:auto;
+    padding:26px 26px;box-shadow:var(--shadow-lg)}
+  .sheet .grab{display:none}                                   /* drag handle is a mobile affordance */
+
+  /* Brand shown once: the sidebar carries it, so drop the duplicate in-content wordmark */
+  #app:has(.tabbar) .appbar .brand{display:none}
 }

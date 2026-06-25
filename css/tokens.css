@@ -1,0 +1,93 @@
+/* ============================================================
+   Fizyon Design System — TOKENS (web-first, scales to mobile)
+   Calm, clinical-but-warm, high-trust. Reserve red for true errors.
+   All text tokens pass WCAG AA (≥4.5:1) on both --surface and --bg.
+   Loaded by styleguide.html; Step 3 migrates the app onto these.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+:root{
+  /* ---- Brand (healing teal) ---- */
+  --brand-800:#073D33; --brand-700:#0A5F4E; --brand-600:#0E7C66; --brand-500:#149A7E;
+  --brand-400:#36B79A; --brand-100:#BFE6DC; --brand-50:#E9F5F1;
+  /* ---- Accent (coral) — proof / encouragement, used sparingly ---- */
+  --accent-600:#D8482C; --accent-500:#F2674A; --accent-50:#FCEAE5;
+
+  /* ---- Neutral surfaces ---- */
+  --bg:#F1F5F3;            /* app background */
+  --surface:#FFFFFF;       /* cards, sheets */
+  --surface-2:#F6F9F7;     /* inset / subtle fills */
+  --border:#E2EAE7;        /* hairline */
+  --border-strong:#CBD8D2; /* inputs, emphasis */
+
+  /* ---- Text (every token AA on surface AND bg) ---- */
+  --text-strong:#0E1A16;   /* headings */
+  --text:#293A34;          /* body */
+  --text-muted:#51635C;    /* secondary / captions — 5.6:1 on --bg */
+  --text-disabled:#9AA8A3; /* DISABLED only (non-essential) */
+  --text-on-brand:#FFFFFF;
+
+  /* ---- Semantic (calm; red = TRUE error only) ---- */
+  --success:#0A6F5B; --success-bg:#E6F4F0; --success-border:#BFE6DC;
+  --attention:#8A5A12; --attention-bg:#FBF1DD; --attention-border:#F0DEB6; /* "needs attention / pending" — amber, not red */
+  --error:#B3261E; --error-bg:#FBEAEA; --error-border:#F2C9C6;            /* true errors only */
+  --info:#0B5E8A; --info-bg:#E6F1F8;
+
+  /* ---- Data-viz bands (no alarming red) ---- */
+  --chart-high:#149A7E; --chart-mid:#C99A3B; --chart-low:#C77A5A; --chart-grid:#E2EAE7;
+
+  /* ---- Typography ---- */
+  --font-ui:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  --font-display:'Fraunces',ui-serif,Georgia,serif; /* restraint: H1/H2 + key numerals only */
+  --fs-display:30px; --lh-display:1.12;
+  --fs-h2:22px; --lh-h2:1.2;
+  --fs-h3:18px; --lh-h3:1.3;
+  --fs-body:16px; --lh-body:1.55;   /* body min 16px */
+  --fs-sm:14px;  --lh-sm:1.45;      /* uses --text-muted (AA) */
+  --fs-xs:12.5px;--lh-xs:1.4;       /* captions; --text-muted only */
+  --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
+
+  /* ---- Spacing (8px base) ---- */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px;
+  --s-8:32px; --s-10:40px; --s-12:48px; --s-16:64px;
+
+  /* ---- Radius ---- */
+  --r-xs:6px; --r-sm:9px; --r-md:12px; --r-lg:16px; --r-xl:22px; --r-pill:999px;
+
+  /* ---- Elevation (soft, calm) ---- */
+  --shadow-sm:0 1px 2px rgba(11,60,51,.05);
+  --shadow:0 4px 16px -6px rgba(11,60,51,.10), 0 1px 3px rgba(11,60,51,.05);
+  --shadow-lg:0 18px 44px -16px rgba(11,60,51,.20), 0 4px 12px -6px rgba(11,60,51,.10);
+
+  /* ---- Focus (designed, always visible) ---- */
+  --focus-ring:0 0 0 3px color-mix(in srgb, var(--brand-500) 42%, transparent);
+
+  /* ---- Motion ---- */
+  --ease:cubic-bezier(.2,.6,.2,1); --dur-1:.12s; --dur-2:.2s;
+
+  /* ---- Ergonomics ---- */
+  --tap-min:44px;            /* min touch target (mobile primary actions) */
+  --control-h:44px;          /* default control height (web) */
+  --control-h-lg:52px;       /* patient/mobile primary */
+  --maxw-app:440px;          /* mobile app frame */
+  --sidebar-w:248px;         /* web sidebar */
+  --content-max:1080px;      /* web content column */
+}
+
+@media (prefers-color-scheme:dark){
+  :root{
+    --brand-700:#16876F; --brand-600:#1FB596; --brand-500:#37C7A9; --brand-400:#5BD8BD;
+    --brand-100:#194D42; --brand-50:#12302A;
+    --accent-500:#FF7E63; --accent-50:#3A211B;
+    --bg:#0B1411; --surface:#13201C; --surface-2:#172621; --border:#243531; --border-strong:#33464010;
+    --border-strong:#36493F;
+    --text-strong:#EAF1EE; --text:#C9D6D1; --text-muted:#9BB0A9; --text-disabled:#6A7A75;
+    --success-bg:#12302A; --attention:#E3B266; --attention-bg:#33260E; --attention-border:#5A451A;
+    --error:#F2807F; --error-bg:#3A1C1C; --info-bg:#13283A;
+    --chart-grid:#243531;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+    --shadow:0 4px 18px -6px rgba(0,0,0,.5);
+    --shadow-lg:0 20px 50px -16px rgba(0,0,0,.6);
+  }
+}
+@media (prefers-reduced-motion:reduce){ :root{ --dur-1:0s; --dur-2:0s; } }

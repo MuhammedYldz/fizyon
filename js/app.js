@@ -181,8 +181,8 @@
       return `<div class="appbar"><div class="brand"><img src="assets/logo.svg" alt="">Fizyon</div><div class="spacer"></div><span class="hint">${esc(st.doctor.name)}</span></div>
         <section class="screen">
           <div class="row between" style="margin-bottom:14px"><h1>Hastalarım</h1><span class="badge teal">${st.patients.length}</span></div>
-          ${attention.length ? `<h3 style="margin-bottom:8px;color:var(--danger)"><i class="ti ti-alert-circle" style="vertical-align:-2px"></i> Dikkat gerekenler (${attention.length})</h3>
-            <div class="card flush" style="border-color:var(--danger);margin-bottom:18px">${attention.map(p => card(p, true)).join('')}</div>` : ''}
+          ${attention.length ? `<h3 style="margin-bottom:8px;color:var(--warn)"><i class="ti ti-alert-triangle" style="vertical-align:-2px"></i> Dikkat gerekenler (${attention.length})</h3>
+            <div class="card flush" style="border-color:var(--warn-border,var(--warn));margin-bottom:18px">${attention.map(p => card(p, true)).join('')}</div>` : ''}
           ${others.length ? `<h3 style="margin-bottom:8px">${attention.length ? 'Diğer hastalar' : 'Hastalar'}</h3><div class="card flush">${others.map(p => card(p, false)).join('')}</div>` : ''}
           ${!st.patients.length ? '<div class="card center" style="padding:32px 20px"><i class="ti ti-user-plus" style="font-size:38px;color:var(--ink-300)"></i><p class="muted mt16">Henüz hasta yok. Kodunu paylaşıp davet et.</p></div>' : ''}
           <button class="btn btn-primary mt16" data-act="new-patient"><i class="ti ti-plus"></i> Yeni hasta ekle</button>
@@ -206,7 +206,7 @@
           <div class="row between" style="margin:18px 0 8px"><h3>Program</h3><button class="btn btn-primary sm" data-act="build" data-id="${p.id}"><i class="ti ti-plus"></i> Düzenle</button></div>
           ${p.program.length ? p.program.map(e => {
             const need = e.freq || 1, dc = sessionsToday(p, e.id), ok = dc >= need, nv = sessionsOf(p, e.id, '').filter(s => s.date === (new Date().toISOString().slice(0, 10)) && !s.verified).length;
-            return `<div class="card"><div class="row between"><div><div style="font-weight:600">${esc(e.name)}</div><div class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''} · günde ${need} kez</div></div><span class="badge ${ok ? 'teal' : 'warn'}">${dc}/${need} bugün</span></div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}${nv ? `<div class="badge warn mt8"><i class="ti ti-shield-off"></i> Bugün ${nv} kez kanıtsız</div>` : ''}</div>`;
+            return `<div class="card"><div class="row between"><div><div style="font-weight:600">${esc(e.name)}</div><div class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''} · günde ${need} kez</div></div><span class="badge ${ok ? 'teal' : 'neutral'}">${dc}/${need} bugün</span></div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}${nv ? `<div class="badge warn mt8"><i class="ti ti-shield-off"></i> Bugün ${nv} kez kanıtsız</div>` : ''}</div>`;
           }).join('') : '<p class="hint">Henüz program yok. "Düzenle" ile ekle.</p>'}
 
           <div class="row between" style="margin:18px 0 8px"><h3>Geri bildirim</h3><button class="btn btn-primary sm" data-act="reply-note" data-id="${p.id}"><i class="ti ti-message-plus"></i> Not gönder</button></div>
@@ -258,7 +258,7 @@
         <section class="screen">
           <div class="num-row" style="margin-bottom:12px">
             <div class="stat" style="flex:1"><div class="l">Ortalama uyum</div><div class="v">%${avg}</div></div>
-            <div class="stat" style="flex:1"><div class="l">Risk altında</div><div class="v" style="color:var(--danger)">${atRisk}</div></div>
+            <div class="stat" style="flex:1"><div class="l">Risk altında</div><div class="v" style="color:var(--warn)">${atRisk}</div></div>
           </div>
           <div class="card"><h3 style="margin-bottom:10px">Hasta uyum karşılaştırması</h3><div style="position:relative;height:200px"><canvas id="cmpChart"></canvas></div></div>
           <div class="card"><h3 style="margin-bottom:10px">Haftalık trend</h3><div style="position:relative;height:180px"><canvas id="trendChart"></canvas></div></div>
@@ -529,7 +529,7 @@
     const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
     new Chart(ctx, {
       type: 'bar',
-      data: { labels: ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'], datasets: [{ data, borderRadius: 6, backgroundColor: data.map(v => v < 40 ? css('--danger') : v < 70 ? css('--warn') : css('--teal-500')) }] },
+      data: { labels: ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'], datasets: [{ data, borderRadius: 6, backgroundColor: data.map(v => v < 40 ? css('--chart-low') : v < 70 ? css('--chart-mid') : css('--chart-high')) }] },
       options: { plugins: { legend: { display: false } }, scales: { y: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: css('--line') } }, x: { grid: { display: false } } }, responsive: true, maintainAspectRatio: false }
     });
   }
@@ -542,7 +542,7 @@
     const c1 = $('#cmpChart');
     if (c1) new Chart(c1, {
       type: 'bar',
-      data: { labels: st.patients.map(p => p.name.split(' ')[0]), datasets: [{ data: st.patients.map(p => p.adherence), borderRadius: 6, backgroundColor: st.patients.map(p => p.adherence < 40 ? css('--danger') : p.adherence < 70 ? css('--warn') : css('--teal-500')) }] },
+      data: { labels: st.patients.map(p => p.name.split(' ')[0]), datasets: [{ data: st.patients.map(p => p.adherence), borderRadius: 6, backgroundColor: st.patients.map(p => p.adherence < 40 ? css('--chart-low') : p.adherence < 70 ? css('--chart-mid') : css('--chart-high')) }] },
       options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: css('--line') } }, y: { grid: { display: false } } }, responsive: true, maintainAspectRatio: false }
     });
     const c2 = $('#trendChart');

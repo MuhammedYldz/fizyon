@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fizyon — Design System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/components.css">
+<style>
+  .sg{max-width:1080px;margin:0 auto;padding:var(--s-8) var(--s-5) var(--s-16)}
+  .sg-head{margin-bottom:var(--s-8)}
+  .sg-sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:var(--s-6);margin-bottom:var(--s-5);box-shadow:var(--shadow-sm)}
+  .sg-sec > h2{margin-bottom:var(--s-2)}
+  .sg-sec > .muted{margin-bottom:var(--s-5)}
+  .sg-grp{margin-bottom:var(--s-6)}
+  .sg-grp:last-child{margin-bottom:0}
+  .sg-label{font-size:var(--fs-xs);font-weight:var(--fw-semibold);letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin-bottom:var(--s-3);display:block}
+  .sg-row{display:flex;flex-wrap:wrap;gap:var(--s-3);align-items:center}
+  .sw{width:100%;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border)}
+  .sw .chip-c{height:56px}
+  .sw .meta{padding:var(--s-2) var(--s-3);font-size:var(--fs-xs)}
+  .sw .meta b{display:block;color:var(--text-strong);font-size:var(--fs-sm);font-weight:var(--fw-semibold)}
+  .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:var(--s-3)}
+  .spacer-demo{display:flex;align-items:flex-end;gap:var(--s-3)}
+  .spacer-demo .bar{background:var(--brand-100);border-radius:var(--r-xs)}
+  .elev{height:72px;border-radius:var(--r-lg);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:var(--fs-xs);color:var(--text-muted)}
+  .device{width:390px;max-width:100%;border:1px solid var(--border-strong);border-radius:var(--r-xl);overflow:hidden;background:var(--bg)}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-5)}
+  @media(max-width:760px){.twocol{grid-template-columns:1fr}}
+  .state-note{font-size:var(--fs-xs);color:var(--text-muted);margin-top:var(--s-1)}
+</style>
+</head>
+<body>
+<div class="sg">
+  <div class="sg-head">
+    <span class="caption">FIZYON DESIGN SYSTEM · v1 (proposed)</span>
+    <h1 class="h1" style="margin:6px 0">Calm, clinical, trustworthy.</h1>
+    <p class="body muted" style="max-width:60ch">Token-driven foundation. Web-first, scales to mobile. Reserve red for true errors; secondary text passes WCAG AA; every interactive element has a designed focus ring. Display face (Fraunces) used with restraint for headings and key numbers only.</p>
+  </div>
+
+  <!-- COLOR -->
+  <section class="sg-sec">
+    <h2 class="h2">Color</h2>
+    <p class="muted">Healing teal brand + coral accent (sparingly). Semantic colors are calm; amber = “needs attention”, red = true error only.</p>
+    <div class="sg-grp"><span class="sg-label">Brand</span>
+      <div class="swgrid">
+        <div class="sw"><div class="chip-c" style="background:var(--brand-700)"></div><div class="meta"><b>brand-700</b>#0A5F4E</div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--brand-600)"></div><div class="meta"><b>brand-600</b>primary</div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--brand-500)"></div><div class="meta"><b>brand-500</b>hover</div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--brand-100)"></div><div class="meta"><b>brand-100</b></div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--brand-50)"></div><div class="meta"><b>brand-50</b>tint</div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--accent-500)"></div><div class="meta"><b>accent-500</b>coral</div></div>
+      </div>
+    </div>
+    <div class="sg-grp"><span class="sg-label">Surfaces & text</span>
+      <div class="swgrid">
+        <div class="sw"><div class="chip-c" style="background:var(--bg)"></div><div class="meta"><b>bg</b></div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--surface)"></div><div class="meta"><b>surface</b></div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--surface-2)"></div><div class="meta"><b>surface-2</b></div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--border)"></div><div class="meta"><b>border</b></div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--text-strong)"></div><div class="meta"><b style="color:#fff">text-strong</b></div></div>
+        <div class="sw"><div class="chip-c" style="background:var(--text-muted)"></div><div class="meta"><b style="color:#fff">text-muted</b>AA 5.6:1</div></div>
+      </div>
+    </div>
+    <div class="sg-grp"><span class="sg-label">Semantic (calm)</span>
+      <div class="sg-row">
+        <span class="badge badge--success"><i class="ti ti-circle-check"></i> Başarılı</span>
+        <span class="badge badge--attention"><i class="ti ti-alert-triangle"></i> Dikkat</span>
+        <span class="badge badge--error"><i class="ti ti-alert-circle"></i> Hata</span>
+        <span class="badge badge--brand"><i class="ti ti-shield-check"></i> Kanıtlı</span>
+        <span class="badge badge--neutral">Boş</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPE -->
+  <section class="sg-sec">
+    <h2 class="h2">Type scale</h2>
+    <p class="muted">Body min 16px. Captions use the AA-passing muted token, never the old #9AA8A3.</p>
+    <div class="sg-grp">
+      <div class="h1">Hareketi geri kazan — H1 / Fraunces 30</div>
+      <div class="h2">Hastalarım — H2 / Fraunces 22</div>
+      <div class="h3">Program — H3 / Jakarta 18</div>
+      <p class="body">Gövde metni — Plus Jakarta Sans 16/1.55. Fizyoterapistinin ev programını yap.</p>
+      <p class="text-sm muted">Küçük metin 14 — 10×3 · 30 sn · günde 2 kez</p>
+      <p class="caption">CAPTION 12.5 · SONRAKİ RANDEVU</p>
+      <p class="num" style="font-size:40px;color:var(--text-strong)">82<span class="text-sm muted" style="font-family:var(--font-ui)"> %uyum</span></p>
+    </div>
+  </section>
+
+  <!-- SPACING / RADIUS / ELEVATION -->
+  <section class="sg-sec">
+    <h2 class="h2">Spacing · Radius · Elevation</h2>
+    <div class="twocol">
+      <div class="sg-grp"><span class="sg-label">Spacing (8px base)</span>
+        <div class="spacer-demo">
+          <div class="bar" style="width:var(--s-1);height:24px"></div>
+          <div class="bar" style="width:var(--s-2);height:32px"></div>
+          <div class="bar" style="width:var(--s-3);height:40px"></div>
+          <div class="bar" style="width:var(--s-4);height:48px"></div>
+          <div class="bar" style="width:var(--s-6);height:56px"></div>
+          <div class="bar" style="width:var(--s-8);height:64px"></div>
+        </div>
+        <p class="state-note">4 · 8 · 12 · 16 · 24 · 32 · 40 · 48 · 64</p>
+      </div>
+      <div class="sg-grp"><span class="sg-label">Radius</span>
+        <div class="sg-row">
+          <div style="width:64px;height:48px;background:var(--brand-50);border:1px solid var(--brand-100);border-radius:var(--r-sm)"></div>
+          <div style="width:64px;height:48px;background:var(--brand-50);border:1px solid var(--brand-100);border-radius:var(--r-md)"></div>
+          <div style="width:64px;height:48px;background:var(--brand-50);border:1px solid var(--brand-100);border-radius:var(--r-lg)"></div>
+          <div style="width:64px;height:48px;background:var(--brand-50);border:1px solid var(--brand-100);border-radius:var(--r-xl)"></div>
+        </div>
+        <p class="state-note">sm 9 · md 12 · lg 16 · xl 22</p>
+      </div>
+    </div>
+    <div class="sg-grp" style="margin-top:var(--s-5)"><span class="sg-label">Elevation</span>
+      <div class="sg-row">
+        <div class="elev" style="width:160px;box-shadow:var(--shadow-sm)">shadow-sm</div>
+        <div class="elev" style="width:160px;box-shadow:var(--shadow)">shadow</div>
+        <div class="elev" style="width:160px;box-shadow:var(--shadow-lg)">shadow-lg</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section class="sg-sec">
+    <h2 class="h2">Buttons — all states</h2>
+    <p class="muted">Solid primary (no loud gradient). Default · hover · active via real interaction; disabled & loading shown.</p>
+    <div class="sg-grp"><span class="sg-label">Variants</span>
+      <div class="sg-row">
+        <button class="btn btn--primary">Kaydet</button>
+        <button class="btn btn--secondary">İptal</button>
+        <button class="btn btn--ghost"><i class="ti ti-eye"></i> Demo gez</button>
+        <button class="btn btn--danger"><i class="ti ti-trash"></i> Sil</button>
+        <button class="icon-btn" aria-label="Mesaj"><i class="ti ti-message-2"></i></button>
+      </div>
+    </div>
+    <div class="sg-grp"><span class="sg-label">States (primary)</span>
+      <div class="sg-row">
+        <button class="btn btn--primary">Default</button>
+        <button class="btn btn--primary" style="background:var(--brand-500)">Hover</button>
+        <button class="btn btn--primary" style="background:var(--brand-700)">Active</button>
+        <button class="btn btn--primary" disabled>Disabled</button>
+        <button class="btn btn--primary" aria-busy="true">Yükleniyor</button>
+      </div>
+      <p class="state-note">Focus: tab to any button to see the designed ring.</p>
+    </div>
+    <div class="sg-grp"><span class="sg-label">Mobile primary (lg, ≥52px, thumb)</span>
+      <button class="btn btn--primary btn--lg btn--block"><i class="ti ti-player-play"></i> Seansa başla (2 hareket)</button>
+    </div>
+  </section>
+
+  <!-- INPUTS -->
+  <section class="sg-sec">
+    <h2 class="h2">Inputs — all states</h2>
+    <div class="twocol">
+      <div>
+        <div class="field"><label>E-posta (default)</label><input class="input" placeholder="ornek@eposta.com"></div>
+        <div class="field"><label>Parola (error)</label><input class="input input--error" type="password" value="123"><div class="field-error"><i class="ti ti-alert-circle"></i> En az 8 karakter olmalı.</div></div>
+      </div>
+      <div>
+        <div class="field"><label>Lisans (disabled)</label><input class="input" value="TR-FT-20431" disabled></div>
+        <div class="field"><label>Not</label><textarea class="input" placeholder="Hastaya not…"></textarea></div>
+      </div>
+    </div>
+    <p class="state-note">Focus shows the brand ring; error focus shows a red ring.</p>
+  </section>
+
+  <!-- CONTROLS -->
+  <section class="sg-sec">
+    <h2 class="h2">Chips · Switch · Segmented</h2>
+    <div class="sg-grp"><span class="sg-label">Chips (filter / select)</span>
+      <div class="sg-row">
+        <button class="chip">Tümü</button>
+        <button class="chip" aria-pressed="true"><i class="ti ti-check"></i> Diz</button>
+        <button class="chip">Bel</button>
+        <button class="chip" disabled>Omuz</button>
+      </div>
+    </div>
+    <div class="sg-grp"><span class="sg-label">Switch — unambiguous on/off (replaces Açık/Kapalı chips)</span>
+      <div class="sg-row" style="gap:var(--s-6)">
+        <span class="sg-row" style="gap:var(--s-2)"><button class="switch" role="switch" aria-checked="false" aria-label="Push kapalı"></button><span class="text-sm">Kapalı</span></span>
+        <span class="sg-row" style="gap:var(--s-2)"><button class="switch" role="switch" aria-checked="true" aria-label="Push açık"></button><span class="text-sm">Açık</span></span>
+        <span class="sg-row" style="gap:var(--s-2)"><button class="switch" role="switch" aria-checked="true" disabled></button><span class="text-sm muted">Disabled</span></span>
+      </div>
+    </div>
+    <div class="sg-grp"><span class="sg-label">Segmented</span>
+      <div class="segmented" role="tablist">
+        <button role="tab" aria-selected="true">Bugün</button>
+        <button role="tab" aria-selected="false">Hafta</button>
+        <button role="tab" aria-selected="false">Ay</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA: stat, progress, table, chips -->
+  <section class="sg-sec">
+    <h2 class="h2">Data — stats · progress · table</h2>
+    <div class="sg-grp"><span class="sg-label">KPI stats (carded, calm — risk is amber, not red)</span>
+      <div class="sg-row">
+        <div class="stat" style="min-width:180px"><div class="stat-label">Ortalama uyum</div><div class="stat-value">%82</div></div>
+        <div class="stat stat--attention" style="min-width:180px"><div class="stat-label">Risk altında</div><div class="stat-value">2</div></div>
+      </div>
+    </div>
+    <div class="sg-grp"><span class="sg-label">Progress</span>
+      <div class="progress" style="max-width:360px"><i style="width:62%"></i></div>
+      <p class="state-note">1/3 tamam</p>
+    </div>
+    <div class="sg-grp"><span class="sg-label">Table (web density) — consistent triage: adherence value + reason together</span>
+      <table class="table">
+        <thead><tr><th>Hasta</th><th>Durum</th><th>Uyum</th><th>Not</th></tr></thead>
+        <tbody>
+          <tr><td>Ayşe Kaya</td><td>Sol diz · 3. hafta</td><td><span class="badge badge--success">%82</span></td><td><span class="badge badge--attention">Ağrı 7/10</span></td></tr>
+          <tr><td>Mert Demir</td><td>Sağ omuz · 1. hafta</td><td><span class="badge badge--attention">%41</span></td><td class="muted">—</td></tr>
+          <tr><td>Selin Yıldız</td><td>Bel · 5. hafta</td><td><span class="badge badge--error">%23</span></td><td class="muted">Zaman yok</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- NAV -->
+  <section class="sg-sec">
+    <h2 class="h2">Navigation</h2>
+    <div class="twocol">
+      <div class="sg-grp"><span class="sg-label">Web sidebar (persists on all physio screens)</span>
+        <div style="background:var(--surface-2);border-radius:var(--r-lg);padding:var(--s-3);display:flex;flex-direction:column;gap:var(--s-1);max-width:240px">
+          <a class="nav-side" aria-current="page"><i class="ti ti-users"></i> Hastalar</a>
+          <a class="nav-side"><i class="ti ti-chart-line"></i> Analiz</a>
+          <a class="nav-side"><i class="ti ti-bell"></i> Bildirim</a>
+          <a class="nav-side"><i class="ti ti-calendar"></i> Randevular</a>
+          <a class="nav-side"><i class="ti ti-user"></i> Profil</a>
+        </div>
+      </div>
+      <div class="sg-grp"><span class="sg-label">Mobile tab bar — labels always visible</span>
+        <div class="device" style="width:300px">
+          <nav class="tabbar">
+            <a class="nav-tab" aria-current="page"><i class="ti ti-checkbox"></i> Bugün</a>
+            <a class="nav-tab"><i class="ti ti-map-2"></i> Yolculuk</a>
+            <a class="nav-tab"><i class="ti ti-history"></i> Geçmiş</a>
+            <a class="nav-tab"><i class="ti ti-user"></i> Profil</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATES: alert, empty, skeleton -->
+  <section class="sg-sec">
+    <h2 class="h2">States — feedback · empty · loading</h2>
+    <div class="sg-grp"><span class="sg-label">Inline alerts</span>
+      <div style="display:flex;flex-direction:column;gap:var(--s-2);max-width:520px">
+        <div class="alert alert--success"><i class="ti ti-circle-check"></i> Program güncellendi.</div>
+        <div class="alert alert--attention"><i class="ti ti-alert-triangle"></i> Bu hareket 2 gündür yapılmadı.</div>
+        <div class="alert alert--error"><i class="ti ti-alert-circle"></i> Bağlantı yok. Tekrar dene.</div>
+      </div>
+    </div>
+    <div class="twocol">
+      <div class="sg-grp"><span class="sg-label">Empty state</span>
+        <div class="card"><div class="empty"><i class="ti ti-user-plus"></i><div class="empty-title">Henüz hasta yok</div><div class="text-sm">Kodunu paylaş, ilk hastanı davet et.</div><button class="btn btn--primary" style="margin-top:var(--s-4)">Hasta davet et</button></div></div>
+      </div>
+      <div class="sg-grp"><span class="sg-label">Loading skeleton</span>
+        <div class="card" style="display:flex;flex-direction:column;gap:var(--s-3)">
+          <div class="skeleton" style="height:18px;width:60%"></div>
+          <div class="skeleton" style="height:14px;width:90%"></div>
+          <div class="skeleton" style="height:14px;width:80%"></div>
+          <div class="skeleton" style="height:44px;width:100%;border-radius:var(--r-md)"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIST + CARD -->
+  <section class="sg-sec">
+    <h2 class="h2">List rows & cards</h2>
+    <div class="list" style="max-width:560px">
+      <button class="list-row"><span class="avatar">AK</span><span style="flex:1"><span style="font-weight:600">Ayşe Kaya</span><br><span class="text-sm muted">Sol diz · 3. hafta</span></span><span class="badge badge--success">%82</span><i class="ti ti-chevron-right muted"></i></button>
+      <button class="list-row" aria-selected="true"><span class="avatar">MD</span><span style="flex:1"><span style="font-weight:600">Mert Demir</span><br><span class="text-sm muted">Sağ omuz · 1. hafta</span></span><span class="badge badge--attention">%41</span><i class="ti ti-chevron-right muted"></i></button>
+      <button class="list-row"><span class="avatar">SY</span><span style="flex:1"><span style="font-weight:600">Selin Yıldız</span><br><span class="text-sm muted">Bel · 5. hafta</span></span><span class="badge badge--error">%23</span><i class="ti ti-chevron-right muted"></i></button>
+    </div>
+    <p class="state-note">Hover & active have backgrounds; selected row shows a brand rail. Whole row ≥44px.</p>
+  </section>
+</div>
+</body>
+</html>

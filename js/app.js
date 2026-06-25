@@ -168,24 +168,28 @@
     d_patients() {
       const st = S.get();
       const needs = (p) => p.adherence < 50 || (p.couldnt && p.couldnt.length > 0);
-      const reason = (p) => (p.couldnt && p.couldnt.length) ? `<span class="badge danger"><i class="ti ti-alert-triangle"></i> ${esc(p.couldnt[0].reason || 'geri bildirim')}</span>` : `<span class="badge ${adherenceColor(p.adherence)}">%${p.adherence} uyum</span>`;
-      const card = (p, withReason) => `
-        <button class="list-item" data-patient="${p.id}">
+      // Consistent triage: EVERY row shows adherence % AND the reason (if any), so the
+      // physiotherapist can compare patients at a glance.
+      const reasonChip = (p) => (p.couldnt && p.couldnt.length) ? `<span class="badge warn"><i class="ti ti-message-2"></i> ${esc(p.couldnt[0].reason || 'geri bildirim')}</span>` : '';
+      const card = (p) => `
+        <button class="pt-row" data-patient="${p.id}">
           <span class="avatar">${esc(p.initials)}</span>
-          <span style="flex:1"><span style="font-weight:600">${esc(p.name)}</span><br><span class="hint">${esc(p.condition)} · ${p.week}. hafta</span>${withReason ? '<br><span style="display:inline-block;margin-top:4px">' + reason(p) + '</span>' : ''}</span>
-          ${withReason ? '' : `<span class="badge ${adherenceColor(p.adherence)}">%${p.adherence}</span>`}
-          <i class="ti ti-chevron-right" style="color:var(--ink-300)"></i>
+          <span class="pt-id"><span class="pt-name">${esc(p.name)}</span><span class="hint pt-cond">${esc(p.condition)} · ${p.week}. hafta</span></span>
+          <span class="pt-meta"><span class="badge ${adherenceColor(p.adherence)}">%${p.adherence} uyum</span>${reasonChip(p)}</span>
+          <i class="ti ti-chevron-right pt-chev"></i>
         </button>`;
       const attention = st.patients.filter(needs);
       const others = st.patients.filter(p => !needs(p));
       return `<div class="appbar"><div class="brand"><img src="assets/logo.svg" alt="">Fizyon</div><div class="spacer"></div><span class="hint">${esc(st.doctor.name)}</span></div>
         <section class="screen">
-          <div class="row between" style="margin-bottom:14px"><h1>Hastalarım</h1><span class="badge teal">${st.patients.length}</span></div>
+          <div class="row between" style="margin-bottom:16px">
+            <div class="row gap8"><h1>Hastalarım</h1><span class="badge teal">${st.patients.length}</span></div>
+            ${st.patients.length ? `<button class="btn btn-primary sm" data-act="new-patient"><i class="ti ti-plus"></i> Yeni hasta</button>` : ''}
+          </div>
           ${attention.length ? `<h3 style="margin-bottom:8px;color:var(--warn)"><i class="ti ti-alert-triangle" style="vertical-align:-2px"></i> Dikkat gerekenler (${attention.length})</h3>
-            <div class="card flush" style="border-color:var(--warn-border,var(--warn));margin-bottom:18px">${attention.map(p => card(p, true)).join('')}</div>` : ''}
-          ${others.length ? `<h3 style="margin-bottom:8px">${attention.length ? 'Diğer hastalar' : 'Hastalar'}</h3><div class="card flush">${others.map(p => card(p, false)).join('')}</div>` : ''}
-          ${!st.patients.length ? '<div class="card center" style="padding:32px 20px"><i class="ti ti-user-plus" style="font-size:38px;color:var(--ink-300)"></i><p class="muted mt16">Henüz hasta yok. Kodunu paylaşıp davet et.</p></div>' : ''}
-          <button class="btn btn-primary mt16" data-act="new-patient"><i class="ti ti-plus"></i> Yeni hasta ekle</button>
+            <div class="card flush" style="border-color:var(--warn-border);margin-bottom:18px">${attention.map(card).join('')}</div>` : ''}
+          ${others.length ? `<h3 style="margin-bottom:8px">${attention.length ? 'Diğer hastalar' : 'Hastalar'}</h3><div class="card flush">${others.map(card).join('')}</div>` : ''}
+          ${!st.patients.length ? '<div class="card center" style="padding:40px 20px"><i class="ti ti-user-plus" style="font-size:40px;color:var(--ink-300)"></i><div style="font-weight:700;margin-top:14px">Henüz hasta yok</div><p class="hint" style="margin-top:4px;margin-bottom:16px">Kodunu paylaşıp ilk hastanı davet et.</p><button class="btn btn-primary" data-act="new-patient" style="max-width:240px;margin:0 auto"><i class="ti ti-plus"></i> Hasta ekle</button></div>' : ''}
         </section>
         ${tabbar('d_patients', 'doctor')}`;
     },

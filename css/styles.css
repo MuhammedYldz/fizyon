@@ -83,6 +83,23 @@ h3{font-size:17px;font-weight:700;letter-spacing:-.1px}
 .list-item:last-child{border-bottom:none}
 .list-item:active{background:var(--bg)}
 
+/* Patient triage row — table-like density on web, clean stack on small phones */
+.pt-row{display:grid;grid-template-columns:42px minmax(0,1fr) auto auto;align-items:center;gap:12px;
+  width:100%;text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);background:none;color:var(--ink-900);cursor:pointer;transition:background var(--dur,.15s)}
+.card.flush .pt-row:last-child{border-bottom:none}
+.pt-row:hover{background:var(--surface-2)}
+.pt-row:active{background:var(--bg)}
+.pt-id{display:flex;flex-direction:column;min-width:0}
+.pt-name{font-weight:600}
+.pt-cond{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.pt-chev{color:var(--ink-300);font-size:18px}
+@media(max-width:480px){
+  .pt-row{grid-template-columns:42px minmax(0,1fr)}
+  .pt-meta{grid-column:2/-1;justify-content:flex-start;margin-top:4px}
+  .pt-chev{display:none}
+}
+
 /* Avatar */
 .avatar{width:42px;height:42px;border-radius:50%;background:var(--teal-50);color:var(--teal-600);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;flex-shrink:0}
 .avatar.lg{width:64px;height:64px;font-size:22px}

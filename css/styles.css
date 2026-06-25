@@ -315,8 +315,16 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 
 /* Program builder — tappable exercise row to edit */
-.ex-edit{background:none;border:none;padding:0;text-align:left;cursor:pointer;color:var(--ink-900)}
+.ex-edit{background:none;border:none;padding:0;text-align:left;cursor:pointer;color:var(--ink-900);align-items:center}
 .ex-edit:active{opacity:.7}
+.ex-edit .pv{width:48px;height:48px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.ex-edit .pv .fz-demo{width:86%;max-width:none;color:var(--ink-500)}  /* darker so thumbnails read */
+.ex-card{margin-bottom:0}
+.ex-del{color:var(--ink-300)}
+.ex-del:hover{color:var(--danger);background:var(--danger-bg)}
+/* Add-actions become a compact toolbar (not full-width stacked mobile buttons) */
+.builder-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.builder-grid{display:grid;grid-template-columns:1fr;gap:12px}
 
 /* Appointment slots */
 .slot{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);cursor:pointer;text-align:left;color:var(--ink-900);margin-bottom:8px}
@@ -413,6 +421,8 @@ textarea{height:auto;min-height:88px;padding:12px 14px;line-height:1.5;resize:ve
 
   /* Patient detail: two-column work layout on web */
   #app[data-route="d_patient"] .detail-grid{grid-template-columns:1.5fr 1fr;gap:24px;align-items:start}
+  /* Builder: program as a 2-up grid to use the width */
+  #app[data-route="d_build"] .builder-grid{grid-template-columns:1fr 1fr;gap:14px}
 
   /* New-patient & program-builder forms read better not full-bleed */
   #app[data-route="d_newpatient"] .field,

@@ -231,22 +231,23 @@
 
     d_build() {
       const p = S.patient(params.id); if (!p) return screens.d_patients();
-      const list = p.program.length ? p.program.map(e => `
-        <div class="card">
-          <div class="row between">
-            <button class="row ex-edit" data-act="edit-ex" data-eid="${e.id}" style="flex:1"><span class="pv" style="width:46px;height:46px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden">${fzDemo(e.demo)}</span>
-              <span><span style="font-weight:600">${esc(e.name)}</span><br><span class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''} · <i class="ti ti-pencil" style="vertical-align:-1px"></i> düzenle</span></span></button>
-            <button class="btn-ghost" data-act="del-ex" data-eid="${e.id}" aria-label="Sil"><i class="ti ti-trash" style="color:var(--danger);font-size:20px"></i></button>
+      const list = p.program.map(e => `
+        <div class="card ex-card">
+          <div class="row between" style="gap:10px">
+            <button class="row ex-edit" data-act="edit-ex" data-eid="${e.id}" style="flex:1;gap:12px"><span class="pv">${fzDemo(e.demo)}</span>
+              <span style="min-width:0"><span style="font-weight:600">${esc(e.name)}</span><br><span class="hint">${e.reps}×${e.sets}${e.hold ? ' · ' + e.hold + ' sn' : ''} · günde ${e.freq || 1} kez</span></span></button>
+            <button class="icon-btn ex-del" data-act="del-ex-ask" data-eid="${e.id}" aria-label="${esc(e.name)} sil"><i class="ti ti-trash"></i></button>
           </div>${e.verify ? `<div class="badge teal mt8"><i class="ti ti-shield-check"></i> Kanıt: ${esc(e.verify)}</div>` : ''}
-        </div>`).join('') : '<p class="hint" style="margin-bottom:8px">Henüz hareket yok. Aşağıdan ekle.</p>';
-      return `${appbar('Program', { back: true })}
+        </div>`).join('');
+      return `${appbar(p.name + ' · program', { back: true, right: `<span class="hint" style="font-size:13px"><i class="ti ti-device-floppy" style="vertical-align:-2px"></i> otomatik kayıt</span>` })}
         <section class="screen">
-          <div class="row between" style="margin-bottom:8px"><h3>${esc(p.name)}</h3><span class="hint"><i class="ti ti-device-floppy" style="vertical-align:-2px"></i> otomatik kayıt</span></div>
-          ${list}
-          <button class="btn btn-primary mt8" data-act="open-protocols" data-id="${p.id}"><i class="ti ti-stack-2"></i> Hazır program uygula</button>
-          <button class="btn btn-secondary mt8" data-act="open-library" data-id="${p.id}"><i class="ti ti-list-search"></i> Tek hareket ekle</button>
-          <button class="btn btn-secondary mt8" data-act="record-own" data-id="${p.id}"><i class="ti ti-video"></i> Kendi videonu kaydet</button>
-          <button class="btn btn-primary mt24" data-act="back"><i class="ti ti-check"></i> Bitir</button>
+          <div class="builder-toolbar">
+            <button class="btn btn-primary sm" data-act="open-protocols" data-id="${p.id}"><i class="ti ti-stack-2"></i> Hazır program</button>
+            <button class="btn btn-secondary sm" data-act="open-library" data-id="${p.id}"><i class="ti ti-list-search"></i> Tek hareket</button>
+            <button class="btn btn-secondary sm" data-act="record-own" data-id="${p.id}"><i class="ti ti-video"></i> Video kaydet</button>
+          </div>
+          ${p.program.length ? `<div class="builder-grid">${list}</div>`
+            : '<div class="card center" style="padding:44px 20px"><i class="ti ti-stretching" style="font-size:40px;color:var(--ink-300)"></i><div style="font-weight:700;margin-top:14px">Henüz hareket yok</div><p class="hint" style="margin-top:4px">Yukarıdan hazır program uygula ya da tek tek ekle.</p></div>'}
         </section>
         ${tabbar('d_patients', 'doctor')}`;
     },
@@ -922,6 +923,11 @@
       <div class="card row between" style="margin-bottom:14px"><div><div style="font-weight:600">Kamerayla kanıt iste</div><div class="hint">Hasta hareketi kanıtlasın</div></div><button class="chip ${ex.verify ? 'on' : ''}" id="cfgVerify" data-act="toggle-cfg-verify">${ex.verify ? 'Açık' : 'Kapalı'}</button></div>
       <button class="btn btn-primary" data-act="save-ex" data-eid="${ex.id}" data-id="${pid}"><i class="ti ti-check"></i> Kaydet</button>`;
   }
+  function delConfirmSheet(eid, name) {
+    return `<h3 style="margin-bottom:4px">Hareketi sil?</h3><p class="hint" style="margin-bottom:18px">"${esc(name)}" hastanın programından kaldırılacak.</p>
+      <button class="btn btn-danger" data-act="del-ex" data-eid="${eid}"><i class="ti ti-trash"></i> Sil</button>
+      <button class="btn btn-secondary mt8" data-act="close-sheet">Vazgeç</button>`;
+  }
   function slotPatientName(id) { const p = S.patient(id); return p ? p.name : 'Hasta'; }
   function bookSheet(p) {
     const st = S.get(); const url = st.doctor.bookingUrl;
@@ -1093,8 +1099,9 @@
       } else { p.program.push({ id: 'e' + Date.now(), ...ex }); S.save(); closeSheet(); render(); toast(pr.name + ' eklendi'); }
       return;
     }
+    if (act === 'del-ex-ask') { const p = S.patient(params.id); const ex = p && p.program.find(x => x.id === d.eid); return openSheet(delConfirmSheet(d.eid, ex ? ex.name : 'Hareket')); }
     if (act === 'del-ex') {
-      const p = S.patient(params.id);
+      const p = S.patient(params.id); closeSheet();
       if (S.isCloud()) { window.FZ_API.deleteExercise(d.eid).then(async () => { await refreshProgram(p.id); render(); toast('Hareket silindi'); }).catch(() => toast('Silinemedi')); }
       else { p.program = p.program.filter(x => x.id !== d.eid); S.save(); render(); toast('Hareket silindi'); }
       return;

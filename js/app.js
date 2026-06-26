@@ -21,6 +21,28 @@
   const isDoneToday = (p, e) => sessionsToday(p, e.id) >= (e.freq || 1);
   const uiGet = (k) => { try { return localStorage.getItem('fizyon.ui.' + k) === '1'; } catch { return false; } };
   const uiSet = (k, v) => { try { localStorage.setItem('fizyon.ui.' + k, v ? '1' : '0'); } catch {} };
+  /* completion integrity: a session's method is 'camera' (CV-attested), 'manual' (self-confirmed,
+     no camera) or 'none' (completed without proof). `verified` === camera-attested only. */
+  const camVerifiedToday = (p, exId) => sessionsOf(p, exId, todayStr()).some(s => s.verified);
+  /* Derive adherence / 7-day history / streak from REAL sessions — never hardcoded. Patients with
+     no assigned program keep their existing values (illustrative placeholders only). */
+  function recomputeStats(p) {
+    const prog = p.program || [];
+    if (!prog.length) return;
+    const iso = (d) => d.toISOString().slice(0, 10);
+    const now = new Date(); const hist = [];
+    for (let i = 6; i >= 0; i--) { const d = new Date(now); d.setDate(now.getDate() - i);
+      const done = prog.filter(e => sessionsOf(p, e.id, iso(d)).length >= (e.freq || 1)).length;
+      hist.push(Math.round(done / prog.length * 100)); }
+    p.history = hist;
+    p.adherence = Math.round(hist.reduce((a, b) => a + b, 0) / 7);
+    let streak = 0;
+    for (let i = 0; i < 120; i++) { const d = new Date(now); d.setDate(now.getDate() - i);
+      const active = prog.some(e => sessionsOf(p, e.id, iso(d)).length > 0);
+      if (active) streak++; else if (i > 0) break; }
+    p.streak = streak;
+  }
+  function recomputeAll() { const st = S.get(); if (st && st.patients) st.patients.forEach(recomputeStats); }
 
   function go(route, p = {}) { params = p; stack.push(route); render(); }
   function replace(route, p = {}) { params = p; stack[stack.length - 1] = route; render(); }
@@ -373,6 +395,7 @@
       const e = p.program.find(x => x.id === params.eid) || p.program[0];
       const idx = p.program.indexOf(e) + 1;
       const sets = e.sets || 1, dc = sessionsToday(p, e.id), need = e.freq || 1;
+      const already = !!e.verify && camVerifiedToday(p, e.id), needsProof = !!e.verify && !already;
       return `${appbar(e.name, { back: true })}
         <section class="screen">
           <div class="meta-chips">
@@ -393,10 +416,15 @@
             <button class="btn btn-primary mt16" id="tstart" style="max-width:220px;margin-left:auto;margin-right:auto"><i class="ti ti-player-play"></i> Seti başlat</button>
           </div>
           <div id="finishBox">
+            ${needsProof ? `
             <p class="caption center" id="finishHdr" style="margin:14px 0 8px"><i class="ti ti-shield-check" style="color:var(--teal-600);vertical-align:-2px"></i> Hareketi yap, sonra canlı kamerayla kanıtla:</p>
             <button class="btn btn-accent" data-act="goverify" data-eid="${e.id}"><i class="ti ti-camera"></i> Kamerayla kanıtla</button>
             <button class="btn btn-secondary mt8" data-act="complete-noverify" data-eid="${e.id}"><i class="ti ti-check"></i> Kanıtsız tamamla</button>
             <p class="hint center mt8">Kanıtlamadan tamamlarsan kaydında “kanıtsız” görünür.</p>
+            ` : `
+            ${already ? '<p class="caption center" style="margin:14px 0 8px"><i class="ti ti-shield-check" style="color:var(--teal-600);vertical-align:-2px"></i> Bugün kameralı kanıtladın — bugün tekrar gerekmez.</p>' : '<p class="caption center" style="margin:14px 0 8px">Seti bitirince tamamla:</p>'}
+            <button class="btn btn-primary" data-act="complete-noverify" data-eid="${e.id}"><i class="ti ti-check"></i> Seti tamamla</button>
+            `}
           </div>
           <button class="btn-ghost" data-act="couldnt" data-eid="${e.id}" style="display:flex;margin:14px auto 0"><i class="ti ti-help-circle"></i> Bugün yapamadım</button>
         </section>`;
@@ -445,7 +473,7 @@
 
     p_achievement() {
       const st = S.get(); const p = st.patients[0];
-      const days = p.week * 7, moves = p.week * 12, first = p.name.split(' ')[0];
+      const moves = (p.sessions || []).length, days = new Set((p.sessions || []).map(s => s.date)).size, first = p.name.split(' ')[0];
       return `${appbar('Başarı kartın', { back: true })}
         <section class="screen">
           <div class="ach-card" id="achCard">
@@ -533,6 +561,7 @@
     const route = stack[stack.length - 1];
     app.dataset.route = route; // lets CSS adapt specific screens (e.g. desktop detail layout)
     app.classList.toggle('big-text', uiGet('bigText'));
+    if (S.get()) recomputeAll();
     app.innerHTML = (screens[route] || screens.welcome)();
     window.scrollTo(0, 0);
 
@@ -573,9 +602,10 @@
       options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: css('--line') } }, y: { grid: { display: false } } }, responsive: true, maintainAspectRatio: false }
     });
     const c2 = $('#trendChart');
+    const avgHist = [0, 1, 2, 3, 4, 5, 6].map(i => Math.round(st.patients.reduce((s, p) => s + ((p.history && p.history[i]) || 0), 0) / Math.max(1, st.patients.length)));
     if (c2) new Chart(c2, {
       type: 'line',
-      data: { labels: ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'], datasets: [{ data: st.patients[0].history, borderColor: css('--teal-500'), backgroundColor: 'transparent', tension: .35, pointRadius: 3, pointBackgroundColor: css('--teal-500') }] },
+      data: { labels: ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'], datasets: [{ data: avgHist, borderColor: css('--teal-500'), backgroundColor: 'transparent', tension: .35, pointRadius: 3, pointBackgroundColor: css('--teal-500') }] },
       options: { plugins: { legend: { display: false } }, scales: { y: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: css('--line') } }, x: { grid: { display: false } } }, responsive: true, maintainAspectRatio: false }
     });
   }
@@ -747,22 +777,26 @@
     };
     camRAF = requestAnimationFrame(loop);
   }
-  // Record one completed session (one full run of the exercise), verified or not.
-  function recordSession(e, verified) {
+  // Record one completed session. method: 'camera' (CV-attested) | 'manual' (self) | 'none' (no proof).
+  function recordSession(e, method) {
     const st = S.get(); const p = st.patients[0];
+    const verified = method === 'camera';
     p.sessions = p.sessions || [];
-    p.sessions.push({ exId: e.id, date: todayStr(), verified: !!verified, at: Date.now() });
-    if (st.settings.gamify) p.points += verified ? 30 : 15;
+    p.sessions.push({ exId: e.id, date: todayStr(), method, verified, at: Date.now() });
+    if (st.settings.gamify) p.points += verified ? 30 : (method === 'manual' ? 20 : 15);
+    recomputeStats(p);
     if (S.isCloud()) {
-      window.FZ_API.logCompletion({ exercise_id: e.id, patient_id: p.id, verified: !!verified }).catch(() => {});
-      if (st.settings.gamify) window.FZ_API.setGamification(p.id, { points: p.points }).catch(() => {});
+      // verify_method column is added by the v2 migration; until applied we persist the honest
+      // `verified` boolean (camera-attested ONLY — manual/none are NOT verified).
+      window.FZ_API.logCompletion({ exercise_id: e.id, patient_id: p.id, verified }).catch(() => {});
+      if (st.settings.gamify) window.FZ_API.setGamification(p.id, { points: p.points, streak: p.streak }).catch(() => {});
     }
     S.save();
   }
   function verifySuccess(e) {
     stopCamera();
     const st = S.get();
-    recordSession(e, true);
+    recordSession(e, 'camera');
     const stage = $('#camStage');
     if (stage) stage.insertAdjacentHTML('beforeend', `<div class="verify-ok"><i class="ti ti-circle-check"></i><div style="font-size:18px;font-weight:600">Doğrulandı!</div>${st.settings.gamify ? '<div class="badge" style="background:rgba(255,255,255,.2);color:#fff">+30 puan</div>' : ''}</div>`);
     setTimeout(() => { toast('Kanıt hekime gönderildi'); if (session) sessionAdvance(); else home(); }, 1500);
@@ -1131,10 +1165,10 @@
     if (act === 'goverify') return go('p_verify', { eid: d.eid });
     if (act === 'complete-noverify') {
       const p = st.patients[0]; const ex = p.program.find(x => x.id === d.eid) || p.program[0];
-      recordSession(ex, false);
+      recordSession(ex, 'none');
       toast('Kanıtsız tamamlandı'); if (session) return sessionAdvance(); return home();
     }
-    if (act === 'sim-verify') { const p = st.patients[0]; return verifySuccess(p.program.find(x => x.id === d.eid) || p.program[0]); }
+    if (act === 'sim-verify') { const p = st.patients[0]; const ex = p.program.find(x => x.id === d.eid) || p.program[0]; stopCamera(); recordSession(ex, 'manual'); toast('Kamerasız tamamlandı — kaydında “kanıtsız” görünür'); if (session) return sessionAdvance(); return home(); }
 
     /* couldn't-do */
     if (act === 'couldnt') { reasonPick = null; painPick = null; return openSheet(couldntSheet(d.eid)); }
@@ -1208,7 +1242,7 @@
   /* ---------- cloud state assembly ---------- */
   const initialsOf = (name) => ((name || '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toLocaleUpperCase('tr')) || '?';
   const mapEx = (e) => ({ id: e.id, name: e.name, demo: e.demo || 'generic', video: !!e.video_url, reps: e.reps, sets: e.sets, hold: e.hold, freq: e.freq || 1, note: e.note || '', verify: e.verify_text, done: false });
-  const mapSessions = (comps) => (comps || []).map(c => ({ exId: c.exercise_id, date: (c.done_at || '').slice(0, 10), verified: !!c.verified, at: c.done_at }));
+  const mapSessions = (comps) => (comps || []).map(c => ({ exId: c.exercise_id, date: (c.done_at || '').slice(0, 10), method: c.verify_method || (c.verified ? 'camera' : 'none'), verified: !!c.verified, at: c.done_at }));
 
   async function buildPatient(p) {
     const api = window.FZ_API;
@@ -1218,15 +1252,17 @@
     const doneSet = new Set((comps || []).map(c => c.exercise_id));
     let nextAppt = 'Planlanmadı';
     if (appts && appts[0]) { const d = new Date(appts[0].at); nextAppt = `${d.getDate()} ${MONTHS[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
-    return {
+    const obj = {
       id: p.id, name: p.full_name || 'İsimsiz', initials: initialsOf(p.full_name), condition: p.condition || '-', week: p.week || 1,
-      adherence: 0, streak: gam ? gam.streak : 0, points: gam ? gam.points : 0, journeyStage: gam ? gam.journey_stage : 1,
+      adherence: 0, streak: 0, points: gam ? gam.points : 0, journeyStage: gam ? gam.journey_stage : 1,
       history: [0, 0, 0, 0, 0, 0, 0], note: p.note || '', nextAppt,
       notif: notif ? { tone: notif.tone || 'normal', times: notif.times || ['18:00'], escalateDays: notif.inactive_days || 2, autoActions: notif.auto_actions || ['notifyDoctor'] } : { tone: 'normal', times: ['18:00'], escalateDays: 2, autoActions: ['notifyDoctor'] },
       couldnt: (fb || []).map(f => ({ day: '', reason: f.reason || '', text: f.note || '', pain: f.pain })),
       sessions: mapSessions(comps),
       program: (program || []).map(e => ({ ...mapEx(e), done: doneSet.has(e.id) }))
     };
+    recomputeStats(obj);   // adherence / 7-day history / streak from REAL completions — fixes the cloud-0 bug
+    return obj;
   }
 
   async function buildCloudState() {

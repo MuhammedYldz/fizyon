@@ -144,11 +144,24 @@ window.FZ = (function () {
     // start/resume the local demo experience
     startDemo(role) {
       mode = 'demo'; state = load(); state.cloud = false; state.session = { role, id: role === 'doctor' ? 'd1' : 'p1' };
-      // seed one of today's sessions (unverified) for the demo patient, so history/log has content
+      // seed ~a week of realistic sessions for the demo patient, derived from p1.history, so
+      // adherence/streak/charts are DATA-DRIVEN (computed by app.js), not faked. Today left fresh.
       if (!state._demoSeeded) {
-        const today = new Date().toISOString().slice(0, 10);
+        const iso = (d) => d.toISOString().slice(0, 10);
+        const now = new Date();
         const p1 = state.patients.find(p => p.id === 'p1');
-        if (p1 && (!p1.sessions || !p1.sessions.length)) p1.sessions = [{ exId: 'e1', date: today, verified: false, at: Date.now() }];
+        if (p1 && p1.program.length && (!p1.sessions || !p1.sessions.length)) {
+          const sess = [];
+          for (let off = 6; off >= 1; off--) {
+            const pct = p1.history[6 - off] || 0;
+            const d = new Date(now); d.setDate(now.getDate() - off);
+            const n = Math.round(p1.program.length * pct / 100);
+            p1.program.slice(0, n).forEach((e, k) => {
+              for (let f = 0; f < (e.freq || 1); f++) sess.push({ exId: e.id, date: iso(d), method: k === 0 ? 'camera' : 'none', verified: k === 0, at: Date.now() });
+            });
+          }
+          p1.sessions = sess;
+        }
         state._demoSeeded = true;
       }
       save();

@@ -545,6 +545,12 @@
       ${role === 'patient' ? `<div class="card row between"><div><div style="font-weight:600">Oyunlaştırma</div><div class="hint">Puan, seri ve ödülleri göster</div></div><button class="switch" role="switch" aria-checked="${st.settings.gamify ? 'true' : 'false'}" data-act="toggle-gamify" aria-label="Oyunlaştırma"></button></div>` : ''}
       ${role === 'doctor' ? `<button class="list-item card" data-go="d_appts" style="border-radius:var(--r-lg)"><i class="ti ti-calendar" style="color:var(--teal-600);font-size:22px"></i><span style="flex:1"><span style="font-weight:600">Randevular</span><br><span class="hint">Randevu bağlantın ve uygun saatlerin</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>` : ''}
       <div class="card row between"><div><div style="font-weight:600">Büyük yazı</div><div class="hint">Daha büyük metin ve butonlar</div></div><button class="switch" role="switch" aria-checked="${uiGet('bigText') ? 'true' : 'false'}" data-act="toggle-bigtext" aria-label="Büyük yazı"></button></div>
+      ${role === 'patient' ? `<div class="card flush mt16">
+        <div class="caption" style="padding:14px 16px 2px">Verilerim ve haklarım · KVKK</div>
+        <button class="list-item" data-act="export-data"><i class="ti ti-download" style="color:var(--ink-500)"></i><span style="flex:1">Verilerimi indir<br><span class="hint">Tüm verilerinin kopyası (JSON)</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>
+        <button class="list-item" data-act="withdraw-consent"><i class="ti ti-shield-x" style="color:var(--ink-500)"></i><span style="flex:1">Sağlık verisi onayımı geri çek<br><span class="hint">İşlemeyi durdur</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>
+        <button class="list-item" data-act="delete-account"><i class="ti ti-trash" style="color:var(--danger)"></i><span style="flex:1;color:var(--danger)">Hesabımı ve verilerimi sil<br><span class="hint">Kalıcı, geri alınamaz</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>
+      </div>` : ''}
       <div class="card flush mt16">
         <a class="list-item" href="privacy.html" target="_blank" style="text-decoration:none"><i class="ti ti-lock" style="color:var(--ink-500)"></i><span style="flex:1">Gizlilik ve güvenlik</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
         <a class="list-item" href="terms.html" target="_blank" style="text-decoration:none"><i class="ti ti-file-text" style="color:var(--ink-500)"></i><span style="flex:1">Kullanım koşulları</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></a>
@@ -812,6 +818,28 @@
     document.body.appendChild(s);
   }
   function closeSheet() { const s = $('#fzSheet', document); if (s) { stopCamera(); s.remove(); } }
+  // KVKK data portability (Art. 11): download a copy of all of the patient's own data as JSON.
+  function exportMyData() {
+    const st = S.get(); const p = (st.patients && st.patients[0]) || {};
+    const data = { exportedAt: new Date().toISOString(), app: 'Fizyon', mode: st.cloud ? 'cloud' : 'demo',
+      profile: { name: p.name, condition: p.condition, week: p.week },
+      doctor: st.doctor ? { name: st.doctor.name } : null,
+      program: p.program || [], sessions: p.sessions || [], feedback: p.couldnt || [],
+      gamification: { points: p.points, streak: p.streak, journeyStage: p.journeyStage },
+      adherence: p.adherence, history: p.history };
+    try {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'fizyon-verilerim-' + todayStr() + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      toast('Verilerin indirildi');
+    } catch (e) { toast('İndirme başarısız'); }
+  }
+  const confirmSheet = (title, body, yesAct, yesLabel, danger) =>
+    `<h3 style="margin-bottom:4px">${esc(title)}</h3><p class="hint" style="margin-bottom:18px">${esc(body)}</p>
+     <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="${yesAct}">${esc(yesLabel)}</button>
+     <button class="btn btn-secondary mt8" data-act="close-sheet">Vazgeç</button>`;
   function librarySheet(pid) {
     const st = S.get();
     const presets = st.presets.filter(pr => sheetCat === 'all' || pr.cat === sheetCat);
@@ -1020,6 +1048,16 @@
     if (act === 'reset') { S.reset(); stack = ['welcome']; toast('Sıfırlandı'); return render(); }
     if (act === 'toggle-gamify') { st.settings.gamify = !st.settings.gamify; if (S.isCloud()) window.FZ_API.setGamification(st.patients[0].id, { gamify_enabled: st.settings.gamify }).catch(() => {}); S.save(); return render(); }
     if (act === 'toggle-bigtext') { uiSet('bigText', !uiGet('bigText')); return render(); }
+    /* KVKK data-subject rights (patient) */
+    if (act === 'export-data') { return exportMyData(); }
+    if (act === 'withdraw-consent') { return openSheet(confirmSheet('Onayı geri çek', 'Sağlık verisi işleme onayını geri çekersen egzersiz takibin durur ve fizyoterapistin yeni verini göremez. Devam edilsin mi?', 'withdraw-consent-yes', 'Onayı geri çek', true)); }
+    if (act === 'withdraw-consent-yes') { if (S.isCloud()) window.FZ_API.setConsent(false).catch(() => {}); closeSheet(); return toast('Onayın geri çekildi. İstersen tekrar açabilirsin.'); }
+    if (act === 'delete-account') { return openSheet(confirmSheet('Hesabı sil', 'Hesabın ve tüm verilerin kalıcı olarak silinecek. Bu işlem geri alınamaz. Emin misin?', 'delete-account-yes', 'Evet, hesabımı sil', true)); }
+    if (act === 'delete-account-yes') {
+      closeSheet();
+      if (S.isCloud()) { window.FZ_API.deleteAccount().then(ok => { try { window.FZ_API.unsubscribeAll(); } catch (e) {} S.logout(); stack = ['welcome']; render(); toast(ok ? 'Hesabın ve verilerin silindi' : 'Silme talebin alındı; çıkış yapıldı.'); }); return; }
+      S.reset(); stack = ['welcome']; render(); return toast('Demo verilerin silindi');
+    }
     if (act === 'new-patient') { if (S.isCloud()) return openSheet(inviteSheet(st.code)); return go('d_newpatient'); }
     if (act === 'create-patient') {
       const name = ($('#npName', document).value || '').trim();

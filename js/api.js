@@ -25,7 +25,15 @@
     async signOut() { const c = await client(); return c.auth.signOut(); },
     async session() { const c = await client(); const { data } = await c.auth.getSession(); return data.session; },
     async myProfile() { const c = await client(); const id = await uid(); if (!id) return null; const { data } = await c.from('profiles').select('*').eq('id', id).single(); return data; },
-    async setConsent() { const c = await client(); const id = await uid(); if (!id) return; return c.from('profiles').update({ consent_health: true, consent_at: new Date().toISOString() }).eq('id', id); },
+    async setConsent(granted = true) { const c = await client(); const id = await uid(); if (!id) return; return c.from('profiles').update({ consent_health: !!granted, consent_at: granted ? new Date().toISOString() : null }).eq('id', id); },
+    /* KVKK right-to-erasure: calls the security-definer delete_my_account() RPC (added by the v2
+       compliance migration). Returns true on success; false if the RPC isn't deployed yet, so the
+       caller can fall back to a sign-out + deletion request. */
+    async deleteAccount() {
+      const c = await client();
+      try { const { error } = await c.rpc('delete_my_account'); if (error) throw error; try { await c.auth.signOut(); } catch (e) {} return true; }
+      catch (e) { try { await c.auth.signOut(); } catch (e2) {} return false; }
+    },
 
     /* ---- data layer (RLS enforced server-side) ---- */
     async myDoctor() { const c = await client(); const p = await this.myProfile(); if (!p || !p.doctor_id) return null; const { data } = await c.from('profiles').select('full_name,license_no,booking_url').eq('id', p.doctor_id).single(); return data; },

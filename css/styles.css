@@ -479,3 +479,38 @@ input[type="date"].input,input[type="time"].input{color:var(--ink-900)}
   #app[data-route="d_newpatient"] .tabbar,
   #app[data-route="d_appts"] .tabbar{display:none}
 }
+
+/* ============ v2 clinician dashboard + patient table ============ */
+.kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.kpi .kv{font-family:var(--font-mono);font-size:28px;font-weight:600;line-height:1;letter-spacing:-.02em}
+.kpi .kl{font-size:13px;color:var(--ink-500);margin-top:6px}
+.kpi .kd{font-size:12px;font-weight:700;margin-top:8px;display:inline-flex;align-items:center;gap:3px}
+.kpi .kd.up{color:var(--success)} .kpi .kd.down{color:var(--danger)} .kpi .kd.flag{color:var(--warn)}
+.kpi .ki{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--teal-50);color:var(--teal-600)}
+.kpi.crit{border-color:color-mix(in srgb,var(--danger) 30%,var(--line))}
+.kpi.crit .ki{background:var(--danger-bg);color:var(--danger)}
+.dash-grid{display:grid;grid-template-columns:1fr;gap:14px}
+.dash-list .list-item:last-child{border-bottom:none}
+.demo-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:var(--r-pill);background:var(--coral-50);color:var(--coral-600);vertical-align:middle}
+.spark{display:flex;align-items:flex-end;gap:3px;height:36px}
+.spark i{flex:1;background:var(--teal-100);border-radius:2px 2px 0 0;min-height:3px}
+.spark i.hi{background:var(--teal-500)}
+/* patient table */
+.ptable{width:100%;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--surface);box-shadow:var(--shadow-sm)}
+.ptable-head,.ptbl-row{display:grid;grid-template-columns:1.7fr 1.4fr .9fr 1fr 44px;align-items:center;gap:12px;padding:13px 16px}
+.ptable-head{background:var(--surface-2);border-bottom:1px solid var(--line);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-500)}
+.ptbl-row{border-bottom:1px solid var(--line);cursor:pointer;text-align:left;width:100%;background:none;color:var(--ink-900);transition:background .14s}
+.ptbl-row:last-child{border-bottom:none}.ptbl-row:hover{background:var(--surface-2)}
+.ptbl-name{font-weight:700;letter-spacing:-.01em}.ptbl-id{font-family:var(--font-mono);font-size:11px;color:var(--ink-300)}
+.ptbl-actions{display:flex;justify-content:flex-end}
+.st-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:var(--r-pill);white-space:nowrap}
+.st-kritik{background:var(--danger-bg);color:var(--danger)} .st-aktif{background:var(--teal-50);color:var(--teal-600)} .st-yeni{background:var(--surface-2);color:var(--ink-500);border:1px solid var(--line)} .st-tamam{background:var(--coral-50);color:var(--coral-600)}
+@media(max-width:760px){
+  .ptable-head{display:none}
+  .ptbl-row{grid-template-columns:1fr auto;row-gap:4px}
+  .ptbl-row .c-dx{grid-column:1/2}.ptbl-row .c-visit{display:none}
+}
+@media(min-width:980px){ .dash-grid{grid-template-columns:1.7fr 1fr} .kpi-grid{grid-template-columns:repeat(4,1fr)} }
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--r-md);color:var(--ink-500);font-size:20px;transition:background .14s,color .14s}
+.icon-btn:hover{background:var(--surface-2);color:var(--ink-900)}

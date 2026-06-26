@@ -162,6 +162,10 @@ window.FZ = (function () {
           }
           p1.sessions = sess;
         }
+        const cm = (off) => { const d = new Date(); d.setDate(d.getDate() - off); return d.toISOString().slice(0, 10); };
+        if (state.patients[0] && !state.patients[0].createdAt) state.patients[0].createdAt = cm(8);
+        if (state.patients[1] && !state.patients[1].createdAt) state.patients[1].createdAt = cm(3);
+        if (state.patients[2] && !state.patients[2].createdAt) state.patients[2].createdAt = cm(72);
         state._demoSeeded = true;
       }
       save();

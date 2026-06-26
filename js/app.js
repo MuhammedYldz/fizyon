@@ -48,7 +48,7 @@
   function go(route, p = {}) { params = p; stack.push(route); render(); }
   function replace(route, p = {}) { params = p; stack[stack.length - 1] = route; render(); }
   function back() { if (stack.length > 1) { stack.pop(); render(); } }
-  function home() { const st = S.get(); stack = [st.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); }
+  function home() { const st = S.get(); stack = [st.session.role === 'doctor' ? 'd_dashboard' : 'p_today']; render(); }
   function sessionAdvance() {
     if (!session) { home(); return; }
     session.i++;
@@ -61,6 +61,28 @@
     document.body.appendChild(t); setTimeout(() => t.remove(), 2200);
   }
   function adherenceColor(a) { return a >= 70 ? 'teal' : a >= 40 ? 'warn' : 'danger'; }
+  const inLast7 = (ds) => { if (!ds) return false; const d = new Date(); d.setDate(d.getDate() - 7); return new Date(ds + 'T00:00') >= d; };
+  const fmtShort = (iso) => { try { const d = new Date(iso + 'T00:00'); return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3); } catch (e) { return iso || '—'; } };
+  function statusOf(p) {
+    if ((p.adherence || 0) < 50 || (p.couldnt && p.couldnt.length)) return { key: 'kritik', label: 'İnceleme bekliyor' };
+    if (!p.program || !p.program.length) return { key: 'yeni', label: 'Yeni' };
+    if ((p.adherence || 0) >= 90) return { key: 'tamam', label: 'Hedefte' };
+    return { key: 'aktif', label: 'Aktif tedavi' };
+  }
+  function clinicMetrics(st) {
+    const ps = st.patients || [];
+    const mKey = new Date().toISOString().slice(0, 7);
+    return {
+      total: ps.length,
+      added: ps.filter(p => (p.createdAt || '').slice(0, 7) === mKey).length,
+      active: ps.filter(p => p.program && p.program.length).length,
+      critical: ps.filter(p => statusOf(p).key === 'kritik').length,
+      onTrack: ps.filter(p => statusOf(p).key === 'tamam').length,
+      avgAdh: ps.length ? Math.round(ps.reduce((s, p) => s + (p.adherence || 0), 0) / ps.length) : 0,
+      sessionsWeek: ps.reduce((s, p) => s + (p.sessions || []).filter(x => inLast7(x.date)).length, 0),
+      verifiedWeek: ps.reduce((s, p) => s + (p.sessions || []).filter(x => x.verified && inLast7(x.date)).length, 0)
+    };
+  }
 
   function appbar(title, opts = {}) {
     return `<div class="appbar">
@@ -72,7 +94,7 @@
 
   function tabbar(active, role) {
     const tabs = role === 'doctor'
-      ? [['d_patients', 'ti-users', 'Hastalar'], ['d_analytics', 'ti-chart-line', 'Analiz'], ['d_notifs', 'ti-bell', 'Bildirim'], ['d_profile', 'ti-user', 'Profil']]
+      ? [['d_dashboard', 'ti-layout-dashboard', 'Panel'], ['d_patients', 'ti-users', 'Hastalar'], ['d_analytics', 'ti-chart-line', 'Analiz'], ['d_notifs', 'ti-bell', 'Bildirim'], ['d_profile', 'ti-user', 'Profil']]
       : [['p_today', 'ti-checkbox', 'Bugün'], ['p_journey', 'ti-map-2', 'Yolculuk'], ['p_profile', 'ti-user', 'Profil']];
     return `<nav class="tabbar"><div class="tabwrap">${tabs.map(([r, i, l]) =>
       `<button data-nav="${r}" class="${active === r ? 'on' : ''}" aria-label="${l}"><i class="ti ${i}"></i><span class="lbl">${l}</span></button>`).join('')}</div></nav>`;
@@ -188,31 +210,70 @@
     },
 
     /* Doctor */
-    d_patients() {
-      const st = S.get();
-      const needs = (p) => p.adherence < 50 || (p.couldnt && p.couldnt.length > 0);
-      // Consistent triage: EVERY row shows adherence % AND the reason (if any), so the
-      // physiotherapist can compare patients at a glance.
-      const reasonChip = (p) => (p.couldnt && p.couldnt.length) ? `<span class="badge warn"><i class="ti ti-message-2"></i> ${esc(p.couldnt[0].reason || 'geri bildirim')}</span>` : '';
-      const card = (p) => `
-        <button class="pt-row" data-patient="${p.id}">
-          <span class="avatar">${esc(p.initials)}</span>
-          <span class="pt-id"><span class="pt-name">${esc(p.name)}</span><span class="hint pt-cond">${esc(p.condition)} · ${p.week}. hafta</span></span>
-          <span class="pt-meta"><span class="badge ${adherenceColor(p.adherence)}">%${p.adherence} uyum</span>${reasonChip(p)}</span>
-          <i class="ti ti-chevron-right pt-chev"></i>
-        </button>`;
-      const attention = st.patients.filter(needs);
-      const others = st.patients.filter(p => !needs(p));
+    d_dashboard() {
+      const st = S.get(); const m = clinicMetrics(st);
+      const crit = (st.patients || []).filter(p => statusOf(p).key === 'kritik');
+      const feedbacks = (st.patients || []).flatMap(p => (p.couldnt || []).slice(0, 1).map(c => ({ p, c }))).slice(0, 5);
+      const firstName = (st.doctor.name || '').replace('Fzt.', '').trim().split(' ')[0] || 'Fizyoterapist';
+      const kpi = (cls, icon, val, label, delta) => `<div class="kpi ${cls}"><span class="ki"><i class="ti ${icon}"></i></span><div class="kv">${val}</div><div class="kl">${label}</div>${delta || ''}</div>`;
       return `<div class="appbar"><div class="brand"><img src="assets/logo.svg" alt="">Fizyon</div><div class="spacer"></div><span class="hint">${esc(st.doctor.name)}</span></div>
         <section class="screen">
-          <div class="row between" style="margin-bottom:16px">
-            <div class="row gap8"><h1>Hastalarım</h1><span class="badge teal">${st.patients.length}</span></div>
-            ${st.patients.length ? `<button class="btn btn-primary sm" data-act="new-patient"><i class="ti ti-plus"></i> Yeni hasta</button>` : ''}
+          <h1>Panel</h1>
+          <p class="muted" style="margin-bottom:16px">Merhaba ${esc(firstName)} 👋 Bugünün özeti.</p>
+          <div class="kpi-grid">
+            ${kpi('', 'ti-users', m.total, 'Toplam hasta', m.added ? `<div class="kd up"><i class="ti ti-trending-up"></i> bu ay +${m.added}</div>` : '')}
+            ${kpi('', 'ti-activity', m.active, 'Aktif tedavi')}
+            ${kpi('crit', 'ti-alert-triangle', m.critical, 'İnceleme bekliyor')}
+            ${kpi('', 'ti-target-arrow', '%' + m.avgAdh, 'Ortalama uyum')}
           </div>
-          ${attention.length ? `<h3 style="margin-bottom:8px;color:var(--warn)"><i class="ti ti-alert-triangle" style="vertical-align:-2px"></i> Dikkat gerekenler (${attention.length})</h3>
-            <div class="card flush" style="border-color:var(--warn-border);margin-bottom:18px">${attention.map(card).join('')}</div>` : ''}
-          ${others.length ? `<h3 style="margin-bottom:8px">${attention.length ? 'Diğer hastalar' : 'Hastalar'}</h3><div class="card flush">${others.map(card).join('')}</div>` : ''}
-          ${!st.patients.length ? '<div class="card center" style="padding:40px 20px"><i class="ti ti-user-plus" style="font-size:40px;color:var(--ink-300)"></i><div style="font-weight:700;margin-top:14px">Henüz hasta yok</div><p class="hint" style="margin-top:4px;margin-bottom:16px">Kodunu paylaşıp ilk hastanı davet et.</p><button class="btn btn-primary" data-act="new-patient" style="max-width:240px;margin:0 auto"><i class="ti ti-plus"></i> Hasta ekle</button></div>' : ''}
+          <div class="dash-grid">
+            <div>
+              <div class="card"><div class="row between" style="margin-bottom:10px"><h3>Haftalık uyum trendi</h3><span class="badge teal">%${m.avgAdh} ort.</span></div><div style="position:relative;height:200px"><canvas id="dashTrend"></canvas></div></div>
+              <div class="card" style="margin-top:14px"><div class="row between" style="margin-bottom:6px"><h3>İnceleme bekleyenler</h3><span class="badge ${m.critical ? 'danger' : 'teal'}">${m.critical}</span></div>
+                ${crit.length ? `<div class="dash-list card flush" style="margin:0;border:none;box-shadow:none">${crit.map(p => `<button class="list-item" data-patient="${p.id}" style="padding-left:0;padding-right:0"><span class="avatar">${esc(p.initials)}</span><span style="flex:1;min-width:0"><span style="font-weight:600">${esc(p.name)}</span><br><span class="hint">${esc(p.condition)} · %${p.adherence} uyum${p.couldnt && p.couldnt.length ? ' · ' + esc(p.couldnt[0].reason || '') : ''}</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>`).join('')}</div>` : '<p class="hint">Şu an acil inceleme gereken hasta yok 👍</p>'}
+              </div>
+            </div>
+            <div>
+              <div class="card"><h3 style="margin-bottom:8px">Bu hafta</h3>
+                <div class="row between" style="padding:7px 0"><span class="muted">Tamamlanan seans</span><span style="font-weight:700;font-family:var(--font-mono)">${m.sessionsWeek}</span></div>
+                <div class="row between" style="padding:7px 0;border-top:1px solid var(--line)"><span class="muted">Kameralı kanıt</span><span style="font-weight:700;font-family:var(--font-mono)">${m.verifiedWeek}</span></div>
+                <div class="row between" style="padding:7px 0;border-top:1px solid var(--line)"><span class="muted">Hedefteki hasta</span><span style="font-weight:700;font-family:var(--font-mono)">${m.onTrack}</span></div>
+              </div>
+              <div class="card" style="margin-top:14px"><h3 style="margin-bottom:8px">Son geri bildirimler</h3>
+                ${feedbacks.length ? feedbacks.map(({ p, c }) => `<button class="list-item" data-patient="${p.id}" style="padding:8px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:0"><span style="font-weight:600">${esc(p.name)}</span><br><span class="hint">${esc(c.reason || 'Geri bildirim')}${c.pain != null ? ' · ağrı ' + c.pain + '/10' : ''}</span></span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>`).join('') : '<p class="hint">Henüz geri bildirim yok.</p>'}
+              </div>
+              <div class="card" style="margin-top:14px"><div class="row between" style="margin-bottom:6px"><h3>Bugünkü randevular</h3><span class="demo-badge">demo</span></div><p class="hint">Takvim entegrasyonu yakında. Randevuları “Profil → Randevular”dan yönetebilirsin.</p></div>
+            </div>
+          </div>
+        </section>
+        ${tabbar('d_dashboard', 'doctor')}`;
+    },
+
+    d_patients() {
+      const st = S.get(); const m = clinicMetrics(st);
+      const kpi = (cls, icon, val, label, delta) => `<div class="kpi ${cls}"><span class="ki"><i class="ti ${icon}"></i></span><div class="kv">${val}</div><div class="kl">${label}</div>${delta || ''}</div>`;
+      const rows = st.patients.slice().sort((a, b) => (statusOf(a).key === 'kritik' ? 0 : 1) - (statusOf(b).key === 'kritik' ? 0 : 1)).map(p => {
+        const s = statusOf(p), last = (p.sessions || []).map(x => x.date).sort().pop(), lastTxt = last ? (last === todayStr() ? 'Bugün' : fmtShort(last)) : '—';
+        return `<div class="ptbl-row" data-patient="${p.id}" role="button" tabindex="0">
+          <span class="row gap8" style="min-width:0"><span class="avatar" style="width:36px;height:36px;font-size:13px">${esc(p.initials)}</span><span style="min-width:0"><span class="ptbl-name">${esc(p.name)}</span><br><span class="ptbl-id">#${esc((p.id || '').slice(0, 6).toUpperCase())}</span></span></span>
+          <span class="c-dx hint" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.condition || '—')}</span>
+          <span><span class="st-badge st-${s.key}">${s.label}</span></span>
+          <span class="c-visit hint">${lastTxt}</span>
+          <span class="ptbl-actions"><button class="icon-btn" data-act="row-actions" data-id="${p.id}" aria-label="İşlemler"><i class="ti ti-dots-vertical"></i></button></span>
+        </div>`; }).join('');
+      return `<div class="appbar"><div class="brand"><img src="assets/logo.svg" alt="">Fizyon</div><div class="spacer"></div><span class="hint">${esc(st.doctor.name)}</span></div>
+        <section class="screen">
+          <div class="row between" style="margin-bottom:16px"><h1>Hastalarım</h1>${st.patients.length ? `<button class="btn btn-primary sm" data-act="new-patient"><i class="ti ti-plus"></i> Yeni hasta</button>` : ''}</div>
+          <div class="kpi-grid">
+            ${kpi('', 'ti-users', m.total, 'Toplam hasta', m.added ? `<div class="kd up"><i class="ti ti-trending-up"></i> bu ay +${m.added}</div>` : '<div class="kd" style="color:var(--ink-300)">bu ay değişim yok</div>')}
+            ${kpi('', 'ti-activity', m.active, 'Aktif tedavi')}
+            ${kpi('crit', 'ti-alert-triangle', m.critical, 'İnceleme bekliyor')}
+            ${kpi('', 'ti-circle-check', m.onTrack, 'Hedefte / tamamlanan')}
+          </div>
+          ${st.patients.length ? `<div class="ptable">
+            <div class="ptable-head"><span>Hasta</span><span>Tanı</span><span>Durum</span><span class="c-visit">Son ziyaret</span><span></span></div>
+            ${rows}
+          </div>` : '<div class="card center" style="padding:40px 20px"><i class="ti ti-user-plus" style="font-size:40px;color:var(--ink-300)"></i><div style="font-weight:700;margin-top:14px">Henüz hasta yok</div><p class="hint" style="margin-top:4px;margin-bottom:16px">Kodunu paylaşıp ilk hastanı davet et.</p><button class="btn btn-primary" data-act="new-patient" style="max-width:240px;margin:0 auto"><i class="ti ti-plus"></i> Hasta ekle</button></div>'}
         </section>
         ${tabbar('d_patients', 'doctor')}`;
     },
@@ -582,6 +643,7 @@
       const ctx = $('#adChart'); if (ctx && window.Chart) drawAdherence(ctx, p.history);
     }
     if (route === 'd_analytics') drawAnalytics();
+    if (route === 'd_dashboard') drawDashboard();
     if (route === 'reg_form') wireRoleLicense();
     if (route === 'p_exercise') {
       const p = S.get().patients[0];
@@ -620,6 +682,13 @@
       data: { labels: ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'], datasets: [{ data: avgHist, borderColor: css('--teal-500'), backgroundColor: 'transparent', tension: .35, pointRadius: 3, pointBackgroundColor: css('--teal-500') }] },
       options: { plugins: { legend: { display: false } }, scales: { y: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: css('--line') } }, x: { grid: { display: false } } }, responsive: true, maintainAspectRatio: false }
     });
+  }
+
+  function drawDashboard() {
+    if (!window.Chart) return;
+    const st = S.get(); const c = $('#dashTrend'); if (!c) return;
+    const series = [0, 1, 2, 3, 4, 5, 6].map(i => { const ps = st.patients || []; return ps.length ? Math.round(ps.reduce((s, p) => s + ((p.history && p.history[i]) || 0), 0) / ps.length) : 0; });
+    new Chart(c, { type: 'line', data: { labels: ['6g', '5g', '4g', '3g', '2g', 'dün', 'bugün'], datasets: [{ data: series, borderColor: css('--teal-500'), backgroundColor: 'transparent', tension: .35, pointRadius: 3, pointBackgroundColor: css('--teal-500') }] }, options: { plugins: { legend: { display: false } }, scales: { y: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: css('--line') } }, x: { grid: { display: false } } }, responsive: true, maintainAspectRatio: false } });
   }
 
   /* ---- exercise timer ---- */
@@ -800,7 +869,7 @@
     if (S.isCloud()) {
       // verify_method column is added by the v2 migration; until applied we persist the honest
       // `verified` boolean (camera-attested ONLY — manual/none are NOT verified).
-      window.FZ_API.logCompletion({ exercise_id: e.id, patient_id: p.id, verified }).catch(() => {});
+      window.FZ_API.logCompletion({ exercise_id: e.id, patient_id: p.id, verified, verify_method: method }).catch(() => {});
       if (st.settings.gamify) window.FZ_API.setGamification(p.id, { points: p.points, streak: p.streak }).catch(() => {});
     }
     S.save();
@@ -846,6 +915,12 @@
     `<h3 style="margin-bottom:4px">${esc(title)}</h3><p class="hint" style="margin-bottom:18px">${esc(body)}</p>
      <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="${yesAct}">${esc(yesLabel)}</button>
      <button class="btn btn-secondary mt8" data-act="close-sheet">Vazgeç</button>`;
+  function actionsSheet(p) {
+    return `<h3 style="margin-bottom:12px">${esc(p.name)}</h3>
+      <button class="list-item" data-act="reply-note" data-id="${p.id}"><i class="ti ti-message-plus" style="color:var(--teal-600);font-size:22px"></i><span style="flex:1">Mesaj / not gönder</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>
+      <button class="list-item" data-act="open-build" data-id="${p.id}"><i class="ti ti-stretching" style="color:var(--teal-600);font-size:22px"></i><span style="flex:1">Egzersiz programını değiştir</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>
+      <button class="list-item" data-act="open-detail" data-id="${p.id}"><i class="ti ti-user-circle" style="color:var(--teal-600);font-size:22px"></i><span style="flex:1">Hasta detayına git</span><i class="ti ti-chevron-right" style="color:var(--ink-300)"></i></button>`;
+  }
   function librarySheet(pid) {
     const st = S.get();
     const presets = st.presets.filter(pr => sheetCat === 'all' || pr.cat === sheetCat);
@@ -1057,6 +1132,10 @@
     if (act === 'toggle-bigtext') { uiSet('bigText', !uiGet('bigText')); return render(); }
     /* KVKK data-subject rights (patient) */
     if (act === 'export-data') { return exportMyData(); }
+    /* patient-table row action menu */
+    if (act === 'row-actions') { const p = S.patient(d.id); if (p) return openSheet(actionsSheet(p)); return; }
+    if (act === 'open-detail') { closeSheet(); return go('d_patient', { id: d.id }); }
+    if (act === 'open-build') { closeSheet(); return go('d_build', { id: d.id }); }
     if (act === 'withdraw-consent') { return openSheet(confirmSheet('Onayı geri çek', 'Sağlık verisi işleme onayını geri çekersen egzersiz takibin durur ve fizyoterapistin yeni verini göremez. Devam edilsin mi?', 'withdraw-consent-yes', 'Onayı geri çek', true)); }
     if (act === 'withdraw-consent-yes') { if (S.isCloud()) window.FZ_API.setConsent(false).catch(() => {}); closeSheet(); return toast('Onayın geri çekildi. İstersen tekrar açabilirsin.'); }
     if (act === 'delete-account') { return openSheet(confirmSheet('Hesabı sil', 'Hesabın ve tüm verilerin kalıcı olarak silinecek. Bu işlem geri alınamaz. Emin misin?', 'delete-account-yes', 'Evet, hesabımı sil', true)); }
@@ -1237,7 +1316,7 @@
       if (error) throw error;
       const cs = await window.__fzBuildCloudState();
       if (!cs) throw new Error('profil');
-      S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); startRealtime();
+      S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_dashboard' : 'p_today']; render(); startRealtime();
     } catch (e) {
       btn.disabled = false; btn.textContent = 'Giriş yap';
       const m = ((e && e.message) || '').toLowerCase();
@@ -1270,7 +1349,7 @@
       if (data.session) {
         const cs = await window.__fzBuildCloudState();
         if (!cs) throw new Error('profil');
-        S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); startRealtime();
+        S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_dashboard' : 'p_today']; render(); startRealtime();
         toast('Hesabın oluşturuldu');
       } else {
         // email confirmation required (secure default)
@@ -1298,7 +1377,7 @@
     let nextAppt = 'Planlanmadı';
     if (appts && appts[0]) { const d = new Date(appts[0].at); nextAppt = `${d.getDate()} ${MONTHS[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
     const obj = {
-      id: p.id, name: p.full_name || 'İsimsiz', initials: initialsOf(p.full_name), condition: p.condition || '-', week: p.week || 1,
+      id: p.id, name: p.full_name || 'İsimsiz', initials: initialsOf(p.full_name), condition: p.condition || '-', week: p.week || 1, createdAt: p.created_at || null,
       adherence: 0, streak: 0, points: gam ? gam.points : 0, journeyStage: gam ? gam.journey_stage : 1,
       history: [0, 0, 0, 0, 0, 0, 0], note: p.note || '', nextAppt,
       notif: notif ? { tone: notif.tone || 'normal', times: notif.times || ['18:00'], escalateDays: notif.inactive_days || 2, autoActions: notif.auto_actions || ['notifyDoctor'] } : { tone: 'normal', times: ['18:00'], escalateDays: 2, autoActions: ['notifyDoctor'] },
@@ -1397,8 +1476,8 @@
   (async function boot() {
     try {
       const sess = await window.FZ_API.session();
-      if (sess) { const cs = await buildCloudState(); if (cs) { S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); startRealtime(); return; } }
+      if (sess) { const cs = await buildCloudState(); if (cs) { S.loadCloud(cs); stack = [cs.session.role === 'doctor' ? 'd_dashboard' : 'p_today']; render(); startRealtime(); return; } }
     } catch (e) { /* offline / not signed in */ }
-    if (S.resumeDemo()) { const st = S.get(); stack = [st.session.role === 'doctor' ? 'd_patients' : 'p_today']; render(); }
+    if (S.resumeDemo()) { const st = S.get(); stack = [st.session.role === 'doctor' ? 'd_dashboard' : 'p_today']; render(); }
   })();
 })();

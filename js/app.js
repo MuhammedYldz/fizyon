@@ -27,6 +27,7 @@
   /* Derive adherence / 7-day history / streak from REAL sessions — never hardcoded. Patients with
      no assigned program keep their existing values (illustrative placeholders only). */
   function recomputeStats(p) {
+    p.journeyStage = (p.week <= 2) ? 0 : (p.week <= 5) ? 1 : (p.week <= 9) ? 2 : (p.week <= 14) ? 3 : 4; // recovery phase from clinical week
     const prog = p.program || [];
     if (!prog.length) return;
     const iso = (d) => d.toISOString().slice(0, 10);
@@ -358,6 +359,9 @@
       const st = S.get(); const p = st.patients[0];
       const done = p.program.filter(e => isDoneToday(p, e)).length;
       const remaining = p.program.filter(e => !isDoneToday(p, e)).length;
+      const lastActive = (p.sessions || []).map(s => s.date).sort().pop();
+      const gapDays = lastActive ? Math.round((new Date(todayStr() + 'T00:00') - new Date(lastActive + 'T00:00')) / 86400000) : 0;
+      const welcomeBack = gapDays >= 2;   // missed at least one full day → gentle, no-shame return
       const items = p.program.map(e => {
         const dc = sessionsToday(p, e.id), need = e.freq || 1, ok = dc >= need;
         return `<button class="list-item" data-exercise="${e.id}">
@@ -375,7 +379,8 @@
             <button class="btn-ghost" data-act="msg-doctor" aria-label="Mesaj gönder"><i class="ti ti-message-2" style="font-size:24px"></i></button>
           </div>
           <h1>Bugün</h1>
-          <p class="muted" style="margin-bottom:14px">Salı · ${p.program.length} hareket · ~10 dk · ${done}/${p.program.length} tamam</p>
+          <p class="muted" style="margin-bottom:14px">${DAYS_FULL[new Date().getDay()]} · ${p.program.length} hareket · ${done}/${p.program.length} tamam</p>
+          ${welcomeBack ? `<div class="card" style="background:var(--teal-50);border-color:var(--teal-100);margin-bottom:14px"><p style="color:var(--teal-700);margin:0"><i class="ti ti-mood-heart" style="vertical-align:-2px"></i> İyi ki geldin. Birkaç gün ara vermişsin — bugün küçük bir adımla başlayalım, acelesi yok.</p></div>` : ''}
           <div class="bar" style="margin-bottom:16px"><i style="width:${p.program.length ? done / p.program.length * 100 : 0}%"></i></div>
           ${remaining ? `<button class="btn btn-primary" data-act="start-session" style="margin-bottom:16px"><i class="ti ti-player-play"></i> Seansa başla (${remaining} hareket)</button>` : (p.program.length ? '<div class="card center" style="background:var(--teal-50);border-color:var(--teal-100);margin-bottom:16px"><p style="color:var(--teal-700);margin:0"><i class="ti ti-circle-check"></i> Bugünü tamamladın! 🎉</p></div>' : '')}
           <div class="card" style="background:var(--teal-50);border-color:var(--teal-100)">
@@ -453,7 +458,8 @@
       const st = S.get(); const p = st.patients[0];
       if (!st.settings.gamify) return `${appbar('Yolculuk')}<section class="screen"><div class="card center" style="padding:40px 20px"><i class="ti ti-confetti" style="font-size:40px;color:var(--ink-300)"></i><p class="muted mt16">Oyunlaştırma kapalı. Motivasyon için açabilirsin.</p><button class="btn btn-primary mt16" data-act="toggle-gamify" style="max-width:220px;margin:16px auto 0"><i class="ti ti-player-play"></i> Aç</button></div></section>${tabbar('p_journey', 'patient')}`;
       const stages = ['Başlangıç', 'Hareket', 'Güçlenme', 'Dönüş', 'Tam iyileşme'];
-      const goalPct = Math.min(100, Math.round(p.program.filter(e => e.done).length / Math.max(1, p.program.length) * 100));
+      const goalPct = p.adherence || 0;
+      const earned = { b1: (p.sessions || []).length >= 1, b2: p.streak >= 7, b3: (p.sessions || []).filter(s => s.verified).length >= 10, b4: (p.adherence || 0) >= 80 };
       return `${appbar('Yolculuk')}
         <section class="screen">
           <div class="card" style="background:var(--coral-50);border-color:var(--coral-100)">
@@ -466,7 +472,7 @@
           <h3 style="margin:18px 0 8px">İyileşme yolun · diz</h3>
           <div class="card"><div class="row between">${stages.map((s, i) => `<div class="center" style="flex:1"><div style="width:30px;height:30px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;background:${i < p.journeyStage ? 'var(--teal-600)' : i === p.journeyStage ? 'var(--coral-500)' : 'var(--bg)'};color:${i <= p.journeyStage ? '#fff' : 'var(--ink-300)'};font-size:13px;font-weight:600">${i < p.journeyStage ? '<i class="ti ti-check"></i>' : i + 1}</div><div class="hint" style="font-size:10px;margin-top:4px">${s}</div></div>`).join('')}</div></div>
           <h3 style="margin:18px 0 8px">Ödüller</h3>
-          <div class="grid2">${st.badges.map(b => `<div class="reward ${b.got ? '' : 'locked'}"><span class="rc"><i class="ti ${b.icon}"></i></span><span style="font-size:13px;font-weight:500">${esc(b.name)}</span></div>`).join('')}</div>
+          <div class="grid2">${st.badges.map(b => `<div class="reward ${earned[b.id] ? '' : 'locked'}"><span class="rc"><i class="ti ${b.icon}"></i></span><span style="font-size:13px;font-weight:500">${esc(b.name)}</span></div>`).join('')}</div>
         </section>
         ${tabbar('p_journey', 'patient')}`;
     },
@@ -957,6 +963,7 @@
   }
   const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
   const DAYS_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+  const DAYS_FULL = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
   function apptSheet(p) {
     return `<h3 style="margin-bottom:4px">Randevu</h3><p class="hint" style="margin-bottom:14px">${esc(p.name)} · sonraki randevu</p>
       <div class="field"><label for="apDate">Tarih</label><input class="input" id="apDate" type="date"></div>
